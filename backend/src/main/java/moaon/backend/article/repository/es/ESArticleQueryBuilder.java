@@ -10,6 +10,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
 import jakarta.annotation.Nullable;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import moaon.backend.article.domain.ArticleCursor;
@@ -33,6 +34,7 @@ public class ESArticleQueryBuilder {
     private Sort sort;
     private boolean trackScores = false;
     private List<Object> searchAfter;
+    private long timeoutMillis = 100L;
 
     public ESArticleQueryBuilder withIds(List<Long> ids) {
         if (ids != null && !ids.isEmpty()) {
@@ -113,12 +115,18 @@ public class ESArticleQueryBuilder {
                 .withPagination(condition.limit(), condition.cursor(), condition.sortType());
     }
 
+    public ESArticleQueryBuilder withTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
+        return this;
+    }
+
     public NativeQuery build() {
         NativeQueryBuilder builder = NativeQuery.builder()
                 .withQuery(combineBoolQuery())
                 .withTrackTotalHits(true)
                 .withTrackScores(trackScores)
-                .withPageable(pageable);
+                .withPageable(pageable)
+                .withTimeout(Duration.ofMillis(timeoutMillis));
 
         if (sort != null) {
             builder.withSort(sort);

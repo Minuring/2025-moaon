@@ -1,6 +1,5 @@
 package moaon.backend.article.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -61,13 +60,11 @@ class ArticleServiceTest {
                 .id(123L)
                 .clicks(5)
                 .build();
-
-        when(articleRepositoryFacade.findById(123L)).thenReturn(Optional.of(article));
         when(articleRepositoryFacade.findById(123L)).thenReturn(Optional.of(article));
 
         articleService.increaseClicksCount(123L);
 
-        assertThat(article.getClicks()).isEqualTo(6);
+        verify(articleRepositoryFacade).updateClicksCount(article);
     }
 
     @DisplayName("존재하지 않는 아티클의 클릭 증가 시 예외 발생")
@@ -80,7 +77,6 @@ class ArticleServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ARTICLE_NOT_FOUND);
     }
-
 
     @DisplayName("ArticleCreateRequest의 갯수만큼 저장한다.")
     @Test

@@ -55,7 +55,6 @@ public class ArticleService {
     public void increaseClicksCount(long id) {
         Article article = articleRepositoryFacade.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_NOT_FOUND));
-        article.addClickCount();
         articleRepositoryFacade.updateClicksCount(article);
     }
 

@@ -1,6 +1,7 @@
 services:
   app:
-    image: ${DOCKERHUB_USERNAME}/moaon-backend:${IMAGE_TAG}
+    build:
+      dockerfile: new.Dockerfile
     container_name: app
     depends_on:
       db:

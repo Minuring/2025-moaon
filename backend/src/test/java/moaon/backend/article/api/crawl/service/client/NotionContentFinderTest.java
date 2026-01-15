@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 class NotionContentFinderTest {
 
     private static final NotionContentFinder NOTION_CONTENT_FINDER = new NotionContentFinder(
+            500L, 1000L,
             EnvLoader.getEnv("NOTION_USER_ID"),
             EnvLoader.getEnv("NOTION_TOKEN_V2")
     );

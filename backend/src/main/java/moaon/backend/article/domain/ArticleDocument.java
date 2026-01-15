@@ -3,6 +3,7 @@ package moaon.backend.article.domain;
 import static java.util.stream.Collectors.toSet;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
@@ -18,10 +19,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import moaon.backend.event.domain.EventAction;
-import moaon.backend.event.domain.EventOutbox;
-import moaon.backend.global.exception.custom.CustomException;
-import moaon.backend.global.exception.custom.ErrorCode;
 import moaon.backend.techStack.domain.TechStack;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Alias;
@@ -102,15 +99,6 @@ public class ArticleDocument {
         this.createdAt = article.getCreatedAt().truncatedTo(ChronoUnit.MILLIS);
     }
 
-    public EventOutbox toEventOutbox(EventAction eventAction) {
-        return EventOutbox.builder()
-                .entityId(this.getId())
-                .eventType("articles")
-                .action(eventAction)
-                .payload(convertToJson(this))
-                .build();
-    }
-
     private Set<String> setTechStacks(List<TechStack> techStacks) {
         if (CollectionUtils.isEmpty(techStacks)) {
             return new HashSet<>();
@@ -118,7 +106,7 @@ public class ArticleDocument {
         return techStacks.stream().map(TechStack::getName).collect(toSet());
     }
 
-    private String convertToJson(Object object) {
+    public JsonNode convertToJson() {
         try {
             ObjectMapper mapper = new ObjectMapper();
             JavaTimeModule module = new JavaTimeModule();
@@ -126,9 +114,11 @@ public class ArticleDocument {
                     DateFormat.date_hour_minute_second_fraction.getPattern());
             module.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter));
             mapper.registerModule(module);
-            return mapper.writeValueAsString(object);
+
+            String json = mapper.writeValueAsString(this);
+            return mapper.readTree(json);
         } catch (JsonProcessingException e) {
-            throw new CustomException(ErrorCode.ARTICLE_PROCESSING_FAILED);
+            throw new IllegalStateException("Json 변환 오류");
         }
     }
 }

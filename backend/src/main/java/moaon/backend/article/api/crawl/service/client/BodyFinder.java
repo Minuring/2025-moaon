@@ -11,10 +11,17 @@ import org.jsoup.nodes.Document;
 
 public class BodyFinder extends ContentFinder {
 
+    private final long requestTimeoutMillis;
+
+    public BodyFinder(long requestTimeoutMillis) {
+        this.requestTimeoutMillis = requestTimeoutMillis;
+    }
+
     @Override
     public FinderCrawlResult crawl(URL url) {
         try {
             Response response = Jsoup.connect(url.toString())
+                    .timeout((int) requestTimeoutMillis)
                     .ignoreHttpErrors(true)
                     .execute();
             validateLink(response.statusCode());

@@ -11,17 +11,24 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 public class TistoryContentFinder extends ContentFinder {
+
     /*
     티스토리가 사용중인 도메인 주소: tistory.com
     이 외 사용자 지정 도메인 주소는 BodyFinder 가 수행한다.
      */
-
     public static final String DIV_CONTENT_STYLE = "div.content_style, div.contents_style";
+
+    private final long requestTimeoutMillis;
+
+    public TistoryContentFinder(long requestTimeoutMillis) {
+        this.requestTimeoutMillis = requestTimeoutMillis;
+    }
 
     @Override
     public FinderCrawlResult crawl(URL link) {
         try {
             Response response = Jsoup.connect(link.toString())
+                    .timeout((int) requestTimeoutMillis)
                     .ignoreHttpErrors(true)
                     .execute();
             validateLink(response.statusCode());

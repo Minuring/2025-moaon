@@ -24,6 +24,9 @@ spring:
     init:
       mode: always
 
+  elasticsearch:
+    uris: http://localhost:9200
+
 logging:
   level:
     org.hibernate.SQL: DEBUG
@@ -43,3 +46,5 @@ s3:
 
 gpt:
   api-key: testKey
+  connect-timeout-millis: 1000
+  read-timeout-millis: 5000

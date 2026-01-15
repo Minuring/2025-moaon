@@ -7,13 +7,14 @@ import moaon.backend.global.util.EnvLoader;
 public class ContentFinders {
 
     private static final List<ContentFinder> FINDERS = List.of(
-            new TistoryContentFinder(),
+            new TistoryContentFinder(1000L),
             new NotionContentFinder(
+                    500L, 1000L, // 노션은 p99가 높음.
                     EnvLoader.getEnv("NOTION_USER_ID"),
                     EnvLoader.getEnv("NOTION_TOKEN_V2")
             ),
-            new VelogContentFinder(),
-            new BodyFinder()
+            new VelogContentFinder(100L, 900L),
+            new BodyFinder(1000L)
     );
 
     public ContentFinder getFinder(URL url) {

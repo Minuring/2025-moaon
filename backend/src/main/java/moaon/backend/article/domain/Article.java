@@ -66,12 +66,14 @@ public class Article extends BaseTimeEntity {
     private int clicks;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt;
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Project project;
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<ArticleTechStack> techStacks = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
@@ -80,6 +82,7 @@ public class Article extends BaseTimeEntity {
 
     @ElementCollection
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private List<Topic> topics = new ArrayList<>();
 
     @Transient
@@ -113,11 +116,8 @@ public class Article extends BaseTimeEntity {
         if (techStacks.size() > 3) {
             throw new CustomException(ErrorCode.ARTICLE_INVALID_TECHSTACK);
         }
+        this.techStacks = new ArrayList<>();
         techStacks.forEach(this::addTechStack);
-    }
-
-    public void addClickCount() {
-        clicks++;
     }
 
     public void addTechStack(TechStack techStack) {

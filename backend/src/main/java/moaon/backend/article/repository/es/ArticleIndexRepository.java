@@ -1,5 +1,6 @@
 package moaon.backend.article.repository.es;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -15,12 +16,18 @@ import org.springframework.data.elasticsearch.core.index.AliasActionParameters;
 import org.springframework.data.elasticsearch.core.index.AliasActions;
 import org.springframework.data.elasticsearch.core.index.Settings;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.BulkOptions;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.CollectionUtils;
 
 @Repository
 @RequiredArgsConstructor
 public class ArticleIndexRepository {
+
+    private static final BulkOptions BULK_OPTIONS_TIMEOUT = BulkOptions.builder()
+            .withTimeout(Duration.ofSeconds(90))
+            .build();
 
     private final ElasticsearchOperations ops;
 
@@ -37,7 +44,7 @@ public class ArticleIndexRepository {
     }
 
     public void bulkIndex(List<IndexQuery> documentQueries, IndexCoordinates indexWrapper) {
-        ops.bulkIndex(documentQueries, indexWrapper);
+        ops.bulkIndex(documentQueries, BULK_OPTIONS_TIMEOUT, indexWrapper);
     }
 
     public void switchAlias(
@@ -49,7 +56,9 @@ public class ArticleIndexRepository {
         AliasActions aliasActions = new AliasActions();
 
         aliasActions.add(addNewIndex(aliasWrapper, iops));
-        aliasActions.add(removeOldIndices(oldIndexNames, aliasWrapper));
+        if (!CollectionUtils.isEmpty(oldIndexNames)) {
+            aliasActions.add(removeOldIndices(oldIndexNames, aliasWrapper));
+        }
 
         iops.alias(aliasActions);
     }

@@ -65,3 +65,18 @@ s3:
 
 gpt:
   api-key: ${GPT_API_KEY}
+  connect-timeout-millis: 1000
+  read-timeout-millis: 5000
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50 # %
+        waitDurationInOpenState: 60000 # Open 상태로 유지될 시간 (밀리초)
+        permittedNumberOfCallsInHalfOpenState: 3
+        minimumNumberOfCalls: 5
+        ignore-exceptions: { moaon.backend.article.api.crawl.exception.AiNoCostException, moaon.backend.article.api.crawl.exception.AiSummaryFailedException }
+# (최소 5개 이상의) 최근 10개 호출에서 실패율이 50%를 넘으면, 60초간 Open함.

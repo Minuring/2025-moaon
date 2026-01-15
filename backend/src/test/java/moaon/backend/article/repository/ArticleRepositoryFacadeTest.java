@@ -9,14 +9,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import moaon.backend.article.domain.Article;
-import moaon.backend.article.domain.ArticleDocument;
 import moaon.backend.article.domain.Sector;
 import moaon.backend.article.dto.ArticleQueryCondition;
 import moaon.backend.article.repository.db.ArticleDBRepository;
 import moaon.backend.article.repository.es.ArticleDocumentRepository;
-import moaon.backend.event.domain.EventAction;
-import moaon.backend.event.domain.EventOutbox;
-import moaon.backend.event.repository.EventOutboxRepository;
+import moaon.backend.article.repository.es.event.IndexEvent;
+import moaon.backend.article.repository.es.event.IndexEvent.Action;
+import moaon.backend.article.repository.es.event.IndexEventRepository;
 import moaon.backend.fixture.ArticleFixtureBuilder;
 import moaon.backend.fixture.ArticleQueryConditionBuilder;
 import moaon.backend.fixture.ProjectFixtureBuilder;
@@ -32,7 +31,7 @@ class ArticleRepositoryFacadeTest {
 
     private final ArticleDocumentRepository articleDocumentRepository = mock(ArticleDocumentRepository.class);
     private final ArticleDBRepository articleDBRepository = mock(ArticleDBRepository.class);
-    private final EventOutboxRepository outboxRepository = mock(EventOutboxRepository.class);
+    private final IndexEventRepository outboxRepository = mock(IndexEventRepository.class);
 
     private final ArticleRepositoryFacade articleRepositoryFacade = new ArticleRepositoryFacade(
             articleDBRepository,
@@ -58,21 +57,6 @@ class ArticleRepositoryFacadeTest {
         verifyNoInteractions(articleDBRepository);
     }
 
-    @DisplayName("ES 검색 실패 시 DB로 fallback한다.")
-    @Test
-    void getPagedArticlesFromDBWhenESFailed() {
-        // given
-        when(articleDocumentRepository.search(queryCondition)).thenThrow(new RuntimeException("ES Search Failed"));
-        when(articleDBRepository.findWithSearchConditions(queryCondition)).thenReturn(mock(ArticleSearchResult.class));
-
-        // when
-        articleRepositoryFacade.search(queryCondition);
-
-        // then
-        verify(articleDocumentRepository).search(queryCondition);
-        verify(articleDBRepository).findWithSearchConditions(queryCondition);
-    }
-
     @DisplayName("프로젝트 ID로 검색 시 ES에서 해당 프로젝트로 한정지어서 검색한다.")
     @Test
     void getByProjectId_success() {
@@ -89,19 +73,19 @@ class ArticleRepositoryFacadeTest {
         verify(articleDocumentRepository).searchInProject(eq(project), eq(pac.toArticleCondition()));
     }
 
-    @DisplayName("Article을 저장할 때 DB와 ES 둘 다에 저장한다.")
+    @DisplayName("Article을 저장할 때 DB와 Outbox 이벤트를 함께 저장한다.")
     @Test
     void save_createsArticleAndDocument() {
         // given
         Article article = new ArticleFixtureBuilder().build();
         when(articleDBRepository.save(eq(article))).thenReturn(article);
-        ArticleDocument document = new ArticleDocument(article);
-        EventOutbox outboxEvent = document.toEventOutbox(EventAction.INSERT);
+        IndexEvent indexEvent = new IndexEvent(article, Action.INDEXING);
+
         // when
         articleRepositoryFacade.save(article);
 
         // then
         verify(articleDBRepository).save(eq(article));
-        verify(outboxRepository).save(eq(outboxEvent));
+        verify(outboxRepository).merge(eq(indexEvent));
     }
 }

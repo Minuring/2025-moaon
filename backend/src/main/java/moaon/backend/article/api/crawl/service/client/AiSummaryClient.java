@@ -1,7 +1,9 @@
 package moaon.backend.article.api.crawl.service.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -13,101 +15,67 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import moaon.backend.article.api.crawl.dto.ArticleCrawlResult;
-import moaon.backend.article.api.crawl.dto.FinderCrawlResult;
 import moaon.backend.article.api.crawl.exception.AiNoCostException;
 import moaon.backend.article.api.crawl.exception.AiSummaryFailedException;
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
+import moaon.backend.global.util.JsonExtractor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 @Slf4j
-@Service
-@RequiredArgsConstructor
+@Component
 public class AiSummaryClient {
 
-    @Value("${gpt.api-key}")
-    private String apiKey;
     private static final URI OPEN_ROUTER_URI = URI.create("https://openrouter.ai/api/v1/chat/completions");
 
-    public ArticleCrawlResult summarize(FinderCrawlResult crawlResult, String model) {
-        String title = crawlResult.title();
-        String content = crawlResult.content();
+    private static final String SYSTEM_PROMPT = """
+            반드시 다음 형식의 JSON 객체만 출력하라:
+            {"summary":"..."}
+            JSON 외 텍스트를 절대 출력하지 마라.
+            
+            summary 규칙:
+            - 모든 문자는 한글
+            - 공백 포함 200자 이하
+            - 170~200자
+            - 핵심 주제/문제/해결 포함
+            - 쉼표, 마침표 외 문장부호 금지
+            - 출력 직전 글자 수 확인 후 필요 시 재작성
+            """;
 
-        String systemPrompt = """
-                당신은 엄격한 텍스트 요약 전문가입니다.
-                
-                **가장 중요한 제약:**
-                **"summary"는 200자(공백 포함)를 절대로 넘겨서는 안 됩니다. 200자 초과는 오류로 간주됩니다.**
-                
-                응답은 반드시 JSON 객체로만 반환하며, 모든 내용은 한글로 작성해야 합니다.
-                필드: {"summary": "..."}.
-                
-                **출력 규칙:**
-                - 사고 과정/추론은 절대 금지하며, 최종 JSON만 간결히 출력하라.
-                - "summary": 200자 이내의 상세 요약. 핵심, 문제/해결, 맥락 등을 구체적으로 포함. 200자를 초과하는 것은 금지.
-                - 길이 제약 준수 및 내용의 구체성과 상세성을 모두 확보해야 합니다.
-                - JSON 외 형식/설명/예시는 절대 포함하지 마십시오.
-                """;
+    private final String apiKey;
+    private final HttpClient httpClient;
+    private final long readTimeoutMillis;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-        String userContent = String.format("원본문: %s", content == null ? "" : content);
+    public AiSummaryClient(
+            @Value("${gpt.api-key}") String apiKey,
+            @Qualifier("aiSummaryHttpClient") HttpClient client,
+            @Value("${gpt.read-timeout-millis}") long readTimeoutMillis
+    ) {
+        this.apiKey = apiKey;
+        this.httpClient = client;
+        this.readTimeoutMillis = readTimeoutMillis;
+    }
 
-        ArrayList<Object> messages = new ArrayList<>();
-        messages.add(Map.of("role", "system", "content", systemPrompt));
-        messages.add(Map.of("role", "user", "content", userContent));
+    @CircuitBreaker(name = "aiSummaryCircuitBreaker", fallbackMethod = "fallback")
+    public String summarize(String content, String model) {
+        if (content == null || content.isEmpty()) {
+            return "";
+        }
 
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", model);
-        requestBody.put("messages", messages);
-        requestBody.put("temperature", 0.2);
-        requestBody.put("max_tokens", 500);
-
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        try (
-                HttpClient httpClient = HttpClient.newBuilder()
-                        .connectTimeout(Duration.ofSeconds(10))
-                        .build()
-        ) {
-            String requestJson = objectMapper.writeValueAsString(requestBody);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(OPEN_ROUTER_URI)
-                    .timeout(Duration.ofSeconds(30))
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + apiKey)
-                    .header("User-Agent", "Moaon/1.0 (http://localhost:8080)")
-                    .POST(BodyPublishers.ofString(requestJson))
-                    .build();
-
+        try {
+            String requestBody = createRequestBody(model, content);
+            HttpRequest request = createHttpRequest(requestBody);
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-            String body = response.body();
-            JsonNode root = objectMapper.readTree(body);
-
-            int statusCode = response.statusCode();
-
-            if (statusCode == 429 || statusCode == 402) {
-                throw new AiNoCostException();
-            }
-
-            if (statusCode < 200 || statusCode >= 300) {
-                JsonNode errorNode = root.path("error");
-                JsonNode codeNode = errorNode.path("code");
-                JsonNode messageNode = errorNode.path("message");
-                String message = messageNode.asText();
-                throw new AiSummaryFailedException(codeNode.asInt(), message);
-            }
+            JsonNode root = objectMapper.readTree(JsonExtractor.extractJsonObject(response.body()));
+            checkStatusCode(response.statusCode(), root.path("error"));
 
             JsonNode contentNode = root.path("choices").get(0).path("message").path("content");
-
-            JsonNode parsed = objectMapper.readTree(contentNode.asText());
-            String summary = parsed.get("summary").asText("");
-
-            summary = enforceLength(summary, 0, 255);
-            return ArticleCrawlResult.success(title, summary, content);
+            JsonNode parsedContent = objectMapper.readTree(contentNode.asText());
+            return parsedContent.get("summary").asText("");
 
         } catch (IOException | InterruptedException e) {
             log.error("AI 요약 API 연결에서 실패했습니다.", e);
@@ -115,20 +83,46 @@ public class AiSummaryClient {
         }
     }
 
-    private String enforceLength(String text, int min, int max) {
-        if (text == null) {
-            return "";
+    private String fallback(Exception e) {
+        return "";
+    }
+
+    private String createRequestBody(final String model, final String userContent) throws JsonProcessingException {
+        ArrayList<Object> messages = new ArrayList<>();
+        messages.add(Map.of("role", "system", "content", SYSTEM_PROMPT));
+        messages.add(Map.of("role", "user", "content", userContent));
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", model);
+        requestBody.put("messages", messages);
+        requestBody.put("temperature", 0.2);
+        requestBody.put("max_tokens", 500);
+        if (!model.endsWith(":free")) {
+            requestBody.put("response_format", Map.of("type", "json_object"));
         }
-        text = text.strip();
-        if (text.length() <= max) {
-            return text;
+        return objectMapper.writeValueAsString(requestBody);
+    }
+
+    private HttpRequest createHttpRequest(final String requestJson) {
+        return HttpRequest.newBuilder()
+                .uri(OPEN_ROUTER_URI)
+                .timeout(Duration.ofMillis(readTimeoutMillis))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + apiKey)
+                .POST(BodyPublishers.ofString(requestJson))
+                .build();
+    }
+
+    private void checkStatusCode(final int statusCode, final JsonNode errorNode) {
+        if (statusCode == 429 || statusCode == 402) {
+            throw new AiNoCostException();
         }
 
-        int lastSentenceEnd = text.lastIndexOf(".", max);
-        if (lastSentenceEnd > min) {
-            return text.substring(0, lastSentenceEnd + 1);
+        if (statusCode < 200 || statusCode >= 300) {
+            JsonNode codeNode = errorNode.path("code");
+            JsonNode messageNode = errorNode.path("message");
+            String message = messageNode.asText();
+            throw new AiSummaryFailedException(codeNode.asInt(), message);
         }
-
-        return text.substring(0, max);
     }
 }

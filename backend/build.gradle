@@ -83,6 +83,8 @@ dependencies {
     // healthcheck
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.0.2'
+
     // jjwt
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'

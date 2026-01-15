@@ -4,6 +4,7 @@ import java.util.stream.Stream;
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.Sector;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface ArticleDBRepository extends JpaRepository<Article, Long>, CustomizedArticleRepository {
@@ -12,4 +13,8 @@ public interface ArticleDBRepository extends JpaRepository<Article, Long>, Custo
 
     @Query("select a from Article a")
     Stream<Article> streamAll();
+
+    @Modifying
+    @Query("update Article a set a.clicks = a.clicks + 1 where a.id = :id")
+    void increaseClickCount(Long id);
 }
