@@ -9,7 +9,7 @@ services:
       elastic:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "80:8080"
     environment:
       SPRING_PROFILES_ACTIVE: new
       SPRING_DATASOURCE_URL_NEW: ${SPRING_DATASOURCE_URL_NEW}
