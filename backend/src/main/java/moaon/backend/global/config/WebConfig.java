@@ -15,7 +15,9 @@ public class WebConfig implements WebMvcConfigurer {
                         "https://www.moaon.site",
                         "https://moaon.co.kr",
                         "https://www.moaon.co.kr",
-                        "http://localhost:3000"
+                        "http://localhost:3000",
+                        "https://staging.d3ekecjp6qvsw.amplifyapp.com",
+                        "https://popo.moaon.site"
                 )
                 .allowedOriginPatterns("https://moaon-preview-*.vercel.app")
                 .allowedMethods("*")
