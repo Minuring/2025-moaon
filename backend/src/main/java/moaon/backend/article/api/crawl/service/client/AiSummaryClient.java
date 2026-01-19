@@ -96,13 +96,11 @@ public class AiSummaryClient {
             String requestBody = createRequestBody(model, content);
             HttpRequest request = createHttpRequest(requestBody);
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-            System.out.println("response.body() = " + response.body());
             JsonNode root = objectMapper.readTree(JsonExtractor.extractJsonObject(response.body()));
             checkStatusCode(response.statusCode(), root.path("error"));
 
             JsonNode contentNode = root.path("choices").get(0).path("message").path("content");
             JsonNode parsedContent = objectMapper.readTree(contentNode.asText());
-            System.out.println("parsedContent.toPrettyString() = " + parsedContent.toPrettyString());
             return createSummarization(parsedContent);
 
         } catch (IOException | InterruptedException e) {
