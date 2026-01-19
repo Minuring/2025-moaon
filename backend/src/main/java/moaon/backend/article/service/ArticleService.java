@@ -3,6 +3,7 @@ package moaon.backend.article.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.article.domain.Article;
@@ -85,8 +86,9 @@ public class ArticleService {
                             .toList(),
                     request.techStacks()
                             .stream()
-                            .map(techStack -> techStackRepository.findByName(techStack)
-                                    .orElseThrow(() -> new CustomException(ErrorCode.TECHSTACK_NOT_FOUND)))
+                            .map(techStackRepository::findByName)
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
                             .toList()
             );
 
