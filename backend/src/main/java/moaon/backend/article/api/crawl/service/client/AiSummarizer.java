@@ -12,44 +12,33 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class AiSummarizer {
 
-    private static final String BLANK = "";
-    private static final String FREE_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
-    private static final String NON_FREE_MODEL = "meta-llama/llama-3.3-70b-instruct";
+    private static final String MODEL = "google/gemini-2.0-flash-001";
 
     private final AiSummaryClient aiSummaryClient;
 
-    public String summarize(String content, Member member) {
+    public AiSummarization summarize(String content, Member member) {
         if (member.isCrawlCountOvered()) {
             log.info("사용자 하루 토큰 횟수 한계입니다. memberId: {}", member.getId());
-            return BLANK;
+            return AiSummarization.nothing();
         }
 
         try {
-            try {
-                String summary = aiSummaryClient.summarize(content, FREE_MODEL);
-                log.info("아티클을 요약했습니다. model: {}, memberId: {}", FREE_MODEL, member.getId());
-                return summary;
+            AiSummarization summarization = aiSummaryClient.summarize(content, MODEL);
+            log.info("아티클을 요약했습니다. model: {}, memberId: {}", MODEL, member.getId());
+            return summarization;
 
-            } catch (AiNoCostException | AiSummaryFailedException e) {
-                try {
-                    String summary = aiSummaryClient.summarize(content, NON_FREE_MODEL);
-                    log.info("아티클을 요약했습니다. model: {}, memberId: {}", NON_FREE_MODEL, member.getId());
-                    return summary;
+        } catch (AiNoCostException e) {
+            log.warn("토큰 사용량이 한계에 달해 요약에 실패했습니다. model: {}", MODEL);
+            return AiSummarization.nothing();
 
-                } catch (AiNoCostException e1) {
-                    log.warn("토큰 사용량이 한계에 달해 요약에 실패했습니다. model: {}", NON_FREE_MODEL);
-                    return BLANK;
-
-                } catch (AiSummaryFailedException e1) {
-                    log.error("AI 요약에 실패했습니다. model:{}, status code: {}, message: {}",
-                            NON_FREE_MODEL, e1.getResponseStatusCode(), e1.getResponseMessage());
-                    return BLANK;
-                }
-            }
+        } catch (AiSummaryFailedException e) {
+            log.error("AI 요약에 실패했습니다. model:{}, status code: {}, message: {}",
+                    MODEL, e.getResponseStatusCode(), e.getResponseMessage());
+            return AiSummarization.nothing();
 
         } catch (Exception e) {
             log.error("아티클 요약에 실패했습니다.", e);
-            return BLANK;
+            return AiSummarization.nothing();
         }
     }
 }

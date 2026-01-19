@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.article.api.crawl.dto.ArticleCrawlResult;
 import moaon.backend.article.api.crawl.dto.FinderCrawlResult;
+import moaon.backend.article.api.crawl.service.client.AiSummarization;
 import moaon.backend.article.api.crawl.service.client.AiSummarizer;
 import moaon.backend.article.api.crawl.service.client.ContentFinder;
 import moaon.backend.article.api.crawl.service.client.ContentFinders;
@@ -31,12 +32,12 @@ public class ArticleCrawlService {
         ContentFinder finder = FINDER.getFinder(parsedUrl);
 
         FinderCrawlResult crawlResult = finder.crawl(parsedUrl);
-        String summary = summarizer.summarize(crawlResult.content(), member);
+        AiSummarization summarization = summarizer.summarize(crawlResult.content(), member);
 
-        if (summary.isBlank()) {
+        if (summarization.isBlank()) {
             return ArticleCrawlResult.withoutSummary(crawlResult);
         }
-        return ArticleCrawlResult.success(crawlResult.title(), summary, crawlResult.content());
+        return ArticleCrawlResult.success(crawlResult, summarization);
     }
 
     @Transactional

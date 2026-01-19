@@ -11,9 +11,11 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import moaon.backend.article.api.crawl.dto.FinderCrawlResult;
+import moaon.backend.article.api.crawl.service.client.AiSummarization;
 import moaon.backend.article.api.crawl.service.client.AiSummarizer;
 import moaon.backend.article.api.crawl.service.client.AiSummaryClient;
 import moaon.backend.article.api.crawl.service.client.TistoryContentFinder;
+import moaon.backend.article.domain.Sector;
 import moaon.backend.member.domain.Member;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -32,10 +34,10 @@ class AiSummarizerTest {
         Member member = new Member(1L, "socialId", "abc@gmail.com", "poopo", 20);
 
         // when
-        String summary = summarizer.summarize("본문", member);
+        AiSummarization summarization = summarizer.summarize("본문", member);
 
         // then
-        assertThat(summary).isEmpty();
+        assertThat(summarization.isBlank()).isTrue();
         verify(aiSummaryClient, never()).summarize(eq("본문"), any());
     }
 
@@ -43,7 +45,7 @@ class AiSummarizerTest {
     @Disabled
     void summarize() throws Exception {
         // given
-        URL normalLink = new URL("https://tempdev.tistory.com/19");
+        URL normalLink = new URL("https://velog.io/@jackjack/DB-%EA%B5%AC%EC%A1%B0-%EB%B0%8F-%EC%84%A4%EA%B3%84-RDB-vs-NoSQL");
         FinderCrawlResult crawlResult = new TistoryContentFinder(1000L).crawl(normalLink);
 
         HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
@@ -52,12 +54,15 @@ class AiSummarizerTest {
 
         // when
         Member member = new Member(1L, "socialId", "abc@gmail.com", "poopo", 0);
-        String summary = aiSummarizer.summarize(crawlResult.content(), member);
+        AiSummarization summarization = aiSummarizer.summarize(crawlResult.content(), member);
 
         // then
         assertAll(
-                () -> assertThat(summary).isNotEmpty(),
-                () -> assertThat(summary.length()).isLessThanOrEqualTo(200)
+                () -> assertThat(summarization.summary()).isNotEmpty(),
+                () -> assertThat(summarization.summary().length()).isLessThanOrEqualTo(250),
+                () -> assertThat(summarization.sector()).isInstanceOf(Sector.class),
+                () -> assertThat(summarization.topics()).hasSizeBetween(1, 3),
+                () -> assertThat(summarization.techStacks()).hasSizeBetween(1, 3)
         );
     }
 }

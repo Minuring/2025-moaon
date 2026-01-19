@@ -13,11 +13,15 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.article.api.crawl.exception.AiNoCostException;
 import moaon.backend.article.api.crawl.exception.AiSummaryFailedException;
+import moaon.backend.article.domain.Sector;
+import moaon.backend.article.domain.Topic;
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
 import moaon.backend.global.util.JsonExtractor;
@@ -32,17 +36,39 @@ public class AiSummaryClient {
     private static final URI OPEN_ROUTER_URI = URI.create("https://openrouter.ai/api/v1/chat/completions");
 
     private static final String SYSTEM_PROMPT = """
-            반드시 다음 형식의 JSON 객체만 출력하라:
-            {"summary":"..."}
-            JSON 외 텍스트를 절대 출력하지 마라.
+            반드시 다음 형식의 단일 JSON 객체만 출력하라:
+            {
+                "summary":"...",
+                "sector": "..",
+                "topics": "...",
+                "techstacks": "..."
+            }
+            텍스트 블록, 마크다운 문법 등 JSON 외 텍스트를 절대 출력하지 마라.
             
             summary 규칙:
-            - 모든 문자는 한글
-            - 공백 포함 200자 이하
-            - 170~200자
-            - 핵심 주제/문제/해결 포함
-            - 쉼표, 마침표 외 문장부호 금지
-            - 출력 직전 글자 수 확인 후 필요 시 재작성
+            - 한글 요약문
+            - 공백 포함 150~200자 반드시 준수
+            - 큰따옴표 금지
+            
+            sector 규칙:
+            - 프론트엔드와 관련된 문서인 경우 FE
+            - 백엔드와 관련된 문서의 경우 BE
+            - 안드로이드와 관련된 문서의 경우 ANDROID
+            - iOS와 관련된 문서의 경우 IOS
+            - 클라우드, 아키텍처와 관련된 문서의 경우 INFRA
+            - 기술과 관련된 문서가 아닌 경우 NON_TECH
+            
+            topics 규칙:
+            - sector가 FE인 경우 TECHNOLOGY_ADOPTION, TROUBLESHOOTING, PERFORMANCE_OPTIMIZATION, TESTING, CODE_QUALITY, STATE_MANAGEMENT, UI_UX_IMPROVEMENT, BUNDLING, ETC 중 1~3개
+            - sector가 BE인 경우 TECHNOLOGY_ADOPTION, TROUBLESHOOTING, PERFORMANCE_OPTIMIZATION, TESTING, CODE_QUALITY, SECURITY, ARCHITECTURE_DESIGN, API_DESIGN, DATABASE, DEPLOYMENT_AND_OPERATION, ETC 중 1~3개
+            - sector가 ANDROID인 경우 BUILD, NATIVE, SDK, TECHNOLOGY_ADOPTION, TROUBLESHOOTING, PERFORMANCE_OPTIMIZATION, TESTING, CODE_QUALITY, UI_UX_IMPROVEMENT, ARCHITECTURE_DESIGN, ETC 중 1~3개
+            - sector가 IOS인 경우 BUILD, NATIVE, SDK, TECHNOLOGY_ADOPTION, TROUBLESHOOTING, PERFORMANCE_OPTIMIZATION, TESTING, CODE_QUALITY, UI_UX_IMPROVEMENT, ARCHITECTURE_DESIGN, ETC 중 1~3개
+            - sector가 INFRA인 경우 TECHNOLOGY_ADOPTION, TROUBLESHOOTING, PERFORMANCE_OPTIMIZATION, SECURITY, CI_CD, MONITORING_AND_LOGGING, NETWORK, ETC 중 1~3개
+            - sector가 NON_TECH인 경우 TEAM_CULTURE, RETROSPECTIVE, PLANNING, DESIGN, ETC 중 1~3개
+            
+            techstacks 규칙:
+            - 해당 문서에서 다루는 기술 스택 1~3개 ex) "java,spring"
+            - sector가 NON_TECH인 경우 empty
             """;
 
     private final String apiKey;
@@ -61,21 +87,23 @@ public class AiSummaryClient {
     }
 
     @CircuitBreaker(name = "aiSummaryCircuitBreaker", fallbackMethod = "fallback")
-    public String summarize(String content, String model) {
+    public AiSummarization summarize(String content, String model) {
         if (content == null || content.isEmpty()) {
-            return "";
+            return AiSummarization.nothing();
         }
 
         try {
             String requestBody = createRequestBody(model, content);
             HttpRequest request = createHttpRequest(requestBody);
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+            System.out.println("response.body() = " + response.body());
             JsonNode root = objectMapper.readTree(JsonExtractor.extractJsonObject(response.body()));
             checkStatusCode(response.statusCode(), root.path("error"));
 
             JsonNode contentNode = root.path("choices").get(0).path("message").path("content");
             JsonNode parsedContent = objectMapper.readTree(contentNode.asText());
-            return parsedContent.get("summary").asText("");
+            System.out.println("parsedContent.toPrettyString() = " + parsedContent.toPrettyString());
+            return createSummarization(parsedContent);
 
         } catch (IOException | InterruptedException e) {
             log.error("AI 요약 API 연결에서 실패했습니다.", e);
@@ -83,8 +111,8 @@ public class AiSummaryClient {
         }
     }
 
-    private String fallback(Exception e) {
-        return "";
+    private AiSummarization fallback(Exception e) {
+        return AiSummarization.nothing();
     }
 
     private String createRequestBody(final String model, final String userContent) throws JsonProcessingException {
@@ -124,5 +152,37 @@ public class AiSummaryClient {
             String message = messageNode.asText();
             throw new AiSummaryFailedException(codeNode.asInt(), message);
         }
+    }
+
+    private AiSummarization createSummarization(final JsonNode parsedContent) {
+        String summary = parsedContent.get("summary").asText("");
+        Sector sector = Sector.of(parsedContent.get("sector").asText(""));
+        List<Topic> topics = extractListValue(parsedContent.get("topics")).stream()
+                .map(String::toUpperCase)
+                .map(Topic::valueOf)
+                .toList();
+        List<String> techStacks = extractListValue(parsedContent.get("techstacks"));
+        return new AiSummarization(summary, sector, topics, techStacks);
+    }
+
+    private List<String> extractListValue(JsonNode node) {
+        if (node == null || node.isNull() || node.isMissingNode()) {
+            return List.of();
+        }
+        if (node.isArray()) {
+            return node.valueStream()
+                    .map(n -> n.asText("").trim())
+                    .filter(s -> !s.isBlank())
+                    .toList();
+        }
+
+        String text = node.asText("").trim();
+        if (text.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(text.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .toList();
     }
 }
