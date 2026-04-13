@@ -12,6 +12,8 @@ export interface ProjectArticle {
   sector: ArticleSectorKey;
   topics: AllTopicKey[];
   createdAt: string;
+  highlightTitle: string;
+  highlightSummary: string;
 }
 
 export interface ProjectArticleCount {

@@ -605,13 +605,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <td class="tableblock halign-left valign-top"><p class="tableblock">404</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">ARTICLE-005</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ARTICLE-002</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">ARTICLE_INVALID_TECHSTACK</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">아티클의 기술 스택은 중복을 제외하고 0 ~ 3 개 입니다.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">400</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">ARTICLE-005</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ARTICLE-003</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">ARTICLE_INVALID_TOPICS</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">아티클의 토픽은 중복을 제외하고 1 ~ 3 개 입니다.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">400</p></td>
@@ -643,7 +643,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">MEMBER-001</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">UNAUTHORIZED_MEMBER</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">등록된 회원이 아닙니다. 로그인 후 이용 가능합니다.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">사용자 인증에 실패했습니다.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">401</p></td>
 </tr>
 <tr>
@@ -673,7 +673,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">SEARCH-001</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">INVALID_SEARCH_KEYWORD_LENGTH</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">검색어는 2자 이상 50자 이하여야 합니다.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">검색어는 50자 이하여야 합니다.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">400</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">LOGIN-001</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">LOGIN_REDIRECT_FAILED</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RedirectBase를 파싱하는 과정에서 실패했습니다.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">400</p></td>
 </tr>
 </tbody>
@@ -695,7 +701,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ curl 'https://api.moaon.site/projects' -i -X POST \
     -H 'Content-Type: application/json' \
-    --cookie 'token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxMyIsImV4cCI6MTc2MTAxMzAxNH0.5WPk-lSliXzU9ZGQ9HtqfIl1LISrEYA-TBKBUXFEd7RfO_cRFgWjNGRjIEuAI_ZNR35uvP01E04US8_Aa1g91w' \
+    --cookie 'token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxMyIsImV4cCI6MTc3Mzc0NjMxMX0.nJuxNgPmAICoGinrxVnaM2YLSfs9RdCvFP807CjhhNDdfiWDqHYpUA7D0jzDK8U4lK0PCh8lcN6UuMXbELgr2w' \
     -d '{
   "title" : "모아온",
   "summary" : "프로젝트를 모아모아, 모아온",
@@ -717,7 +723,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 Content-Type: application/json
 Host: api.moaon.site
 Content-Length: 706
-Cookie: token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxMyIsImV4cCI6MTc2MTAxMzAxNH0.5WPk-lSliXzU9ZGQ9HtqfIl1LISrEYA-TBKBUXFEd7RfO_cRFgWjNGRjIEuAI_ZNR35uvP01E04US8_Aa1g91w
+Cookie: token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxMyIsImV4cCI6MTc3Mzc0NjMxMX0.nJuxNgPmAICoGinrxVnaM2YLSfs9RdCvFP807CjhhNDdfiWDqHYpUA7D0jzDK8U4lK0PCh8lcN6UuMXbELgr2w
 
 {
   "title" : "모아온",
@@ -811,7 +817,7 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 20 Oct 2025 02:16:54 GMT
+Date: Mon, 16 Mar 2026 11:18:31 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive
 Content-Length: 15
@@ -885,7 +891,7 @@ Content-Length: 15
 <h4 id="_curl_request"><a class="link" href="#_curl_request">Curl request</a></h4>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ curl 'https://api.moaon.site/projects?search=moaon&amp;sort=views&amp;categories=testProjectCategory358&amp;techStacks=testTechStack360&amp;limit=2' -i -X GET</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ curl 'https://api.moaon.site/projects?search=moaon&amp;sort=views&amp;categories=testProjectCategory248&amp;techStacks=testTechStack250&amp;limit=2' -i -X GET</code></pre>
 </div>
 </div>
 </div>
@@ -893,7 +899,7 @@ Content-Length: 15
 <h4 id="_http_request"><a class="link" href="#_http_request">HTTP request</a></h4>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight nowrap"><code class="language-http hljs" data-lang="http">GET /projects?search=moaon&amp;sort=views&amp;categories=testProjectCategory358&amp;techStacks=testTechStack360&amp;limit=2 HTTP/1.1
+<pre class="highlightjs highlight nowrap"><code class="language-http hljs" data-lang="http">GET /projects?search=moaon&amp;sort=views&amp;categories=testProjectCategory248&amp;techStacks=testTechStack250&amp;limit=2 HTTP/1.1
 Host: api.moaon.site</code></pre>
 </div>
 </div>
@@ -908,7 +914,7 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 20 Oct 2025 02:16:54 GMT
+Date: Mon, 16 Mar 2026 11:18:31 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive
 Content-Length: 579
@@ -917,17 +923,17 @@ Content-Length: 579
   "contents" : [ {
     "id" : 9,
     "title" : "moaon",
-    "summary" : "테스트 프로젝트 요약403",
-    "techStacks" : [ "testTechStack360" ],
+    "summary" : "테스트 프로젝트 요약293",
+    "techStacks" : [ "testTechStack250" ],
     "thumbnailUrl" : "https://test.com/image1.png",
     "isLoved" : false,
     "loves" : 0,
     "views" : 6
   }, {
     "id" : 8,
-    "title" : "테스트 프로젝트 제목394",
+    "title" : "테스트 프로젝트 제목284",
     "summary" : "moaon",
-    "techStacks" : [ "testTechStack360" ],
+    "techStacks" : [ "testTechStack250" ],
     "thumbnailUrl" : "https://test.com/image1.png",
     "isLoved" : false,
     "loves" : 0,
@@ -1139,10 +1145,10 @@ Host: api.moaon.site</code></pre>
 Vary: Origin
 Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
-Set-Cookie: viewed_projects=%7B%223%22%3A1760926614%7D; Path=/projects; Max-Age=60186; Expires=Mon, 20 Oct 2025 19:00:00 GMT; Secure; HttpOnly; SameSite=None
+Set-Cookie: viewed_projects=%7B%223%22%3A1773659911%7D; Path=/projects; Max-Age=27689; Expires=Mon, 16 Mar 2026 19:00:00 GMT; Secure; HttpOnly; SameSite=None
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 20 Oct 2025 02:16:54 GMT
+Date: Mon, 16 Mar 2026 11:18:31 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive
 Content-Length: 554
@@ -1150,16 +1156,16 @@ Content-Length: 554
 {
   "id" : 3,
   "authorId" : 5,
-  "title" : "테스트 프로젝트 제목347",
-  "summary" : "테스트 프로젝트 요약348",
-  "description" : "테스트 프로젝트 상세 설명349",
-  "techStacks" : [ "testTechStack353" ],
-  "categories" : [ "testProjectCategory354" ],
+  "title" : "테스트 프로젝트 제목237",
+  "summary" : "테스트 프로젝트 요약238",
+  "description" : "테스트 프로젝트 상세 설명239",
+  "techStacks" : [ "testTechStack243" ],
+  "categories" : [ "testProjectCategory244" ],
   "imageUrls" : [ "https://test.com/image1.png", "https://test.com/image2.png" ],
   "isLoved" : false,
   "loves" : 0,
   "views" : 1,
-  "createdAt" : "2025-10-20T11:16:54.569121",
+  "createdAt" : "2026-03-16T20:18:31.563375",
   "githubUrl" : "https://github.com/test-repo",
   "productionUrl" : "https://test-product.com"
 }</code></pre>
@@ -1321,14 +1327,17 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 20 Oct 2025 02:16:54 GMT
+Date: Mon, 16 Mar 2026 11:18:31 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive
-Content-Length: 1255
+Content-Length: 1257
 
 {
   "counts" : [ {
     "sector" : "nonTech",
+    "count" : 0
+  }, {
+    "sector" : "ios",
     "count" : 0
   }, {
     "sector" : "fe",
@@ -1340,9 +1349,6 @@ Content-Length: 1255
     "sector" : "be",
     "count" : 4
   }, {
-    "sector" : "ios",
-    "count" : 0
-  }, {
     "sector" : "infra",
     "count" : 0
   }, {
@@ -1352,33 +1358,33 @@ Content-Length: 1255
   "articles" : [ {
     "id" : 1,
     "title" : "모아온",
-    "summary" : "테스트 아티클 요약273",
+    "summary" : "테스트 아티클 요약163",
     "clicks" : 0,
-    "techStacks" : [ "testTechStack283" ],
+    "techStacks" : [ "testTechStack173" ],
     "url" : "https://test-product.com",
     "sector" : "be",
     "topics" : [ "etc" ],
-    "createdAt" : "2025-10-20T11:16:54.4121"
+    "createdAt" : "2026-03-16T20:18:31.392586"
   }, {
     "id" : 2,
-    "title" : "테스트 아티클 제목284",
+    "title" : "테스트 아티클 제목174",
     "summary" : "모아온",
     "clicks" : 0,
-    "techStacks" : [ "testTechStack295" ],
+    "techStacks" : [ "testTechStack185" ],
     "url" : "https://test-product.com",
     "sector" : "be",
     "topics" : [ "etc" ],
-    "createdAt" : "2025-10-20T11:16:54.431901"
+    "createdAt" : "2026-03-16T20:18:31.425919"
   }, {
     "id" : 3,
-    "title" : "테스트 아티클 제목296",
-    "summary" : "테스트 아티클 요약297",
+    "title" : "테스트 아티클 제목186",
+    "summary" : "테스트 아티클 요약187",
     "clicks" : 0,
-    "techStacks" : [ "testTechStack307" ],
+    "techStacks" : [ "testTechStack197" ],
     "url" : "https://test-product.com",
     "sector" : "be",
     "topics" : [ "etc" ],
-    "createdAt" : "2025-10-20T11:16:54.445525"
+    "createdAt" : "2026-03-16T20:18:31.444361"
   } ]
 }</code></pre>
 </div>
@@ -1546,7 +1552,7 @@ Content-Length: 1255
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ curl 'https://api.moaon.site/articles' -i -X POST \
     -H 'Content-Type: application/json' \
-    --cookie 'token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzYxMDEyOTkxfQ.lcuWJu5yzWMdUd9Ddts3o8muWtttds3cv1KNXBXeUYtPQVc7Mq_ACiJ-FnkcEZ33ace_4Q9-Jh1UtDdodz70cQ' \
+    --cookie 'token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzczNzQ2MzA3fQ.O_j20D8wlFxoWTLK8fAkqTrMI4ydsJPB5AwjNxRZmFTCy8iQemAP6krikxe-fsQSVaSLzlK4BVwBUMYMRBtQwQ' \
     -d '[ {
   "projectId" : 3,
   "title" : "fork-ts-checker-webpack-plugin",
@@ -1567,7 +1573,7 @@ Content-Length: 1255
 Content-Type: application/json
 Host: api.moaon.site
 Content-Length: 283
-Cookie: token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzYxMDEyOTkxfQ.lcuWJu5yzWMdUd9Ddts3o8muWtttds3cv1KNXBXeUYtPQVc7Mq_ACiJ-FnkcEZ33ace_4Q9-Jh1UtDdodz70cQ
+Cookie: token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzczNzQ2MzA3fQ.O_j20D8wlFxoWTLK8fAkqTrMI4ydsJPB5AwjNxRZmFTCy8iQemAP6krikxe-fsQSVaSLzlK4BVwBUMYMRBtQwQ
 
 [ {
   "projectId" : 3,
@@ -1652,7 +1658,7 @@ Cookie: token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzYxMDEyOTkxfQ.lcuWJu
 Vary: Origin
 Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
-Date: Mon, 20 Oct 2025 02:16:31 GMT
+Date: Mon, 16 Mar 2026 11:18:27 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive</code></pre>
 </div>
@@ -1708,8 +1714,8 @@ Host: api.moaon.site</code></pre>
 Vary: Origin
 Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
-Set-Cookie: clicked_articles=%7B%2210%22%3A1760926591%7D; Path=/articles; Max-Age=60209; Expires=Mon, 20 Oct 2025 19:00:00 GMT; Secure; HttpOnly; SameSite=None
-Date: Mon, 20 Oct 2025 02:16:31 GMT
+Set-Cookie: clicked_articles=%7B%2210%22%3A1773659907%7D; Path=/articles; Max-Age=27693; Expires=Mon, 16 Mar 2026 19:00:00 GMT; Secure; HttpOnly; SameSite=None
+Date: Mon, 16 Mar 2026 11:18:27 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive</code></pre>
 </div>
@@ -1765,7 +1771,7 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 20 Oct 2025 02:16:31 GMT
+Date: Mon, 16 Mar 2026 11:18:27 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive
 Content-Length: 828
@@ -1782,7 +1788,7 @@ Content-Length: 828
     "url" : "https://test-product.com",
     "sector" : "be",
     "topics" : [ "db" ],
-    "createdAt" : "2025-10-20T11:16:30.674212"
+    "createdAt" : "2026-03-16T20:18:26.731781"
   }, {
     "id" : 8,
     "projectId" : 1,
@@ -1794,7 +1800,7 @@ Content-Length: 828
     "url" : "https://test-product.com",
     "sector" : "be",
     "topics" : [ "db" ],
-    "createdAt" : "2025-10-20T11:16:30.654064"
+    "createdAt" : "2026-03-16T20:18:26.709276"
   } ],
   "totalCount" : 3,
   "hasNext" : true,
@@ -2009,7 +2015,7 @@ Content-Length: 828
 <div id="footer">
 <div id="footer-text">
 Version 0.0.1-SNAPSHOT<br>
-Last updated 2025-08-29 15:48:40 +0900
+Last updated 2025-08-13 10:16:26 +0900
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>

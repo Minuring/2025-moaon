@@ -16,6 +16,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class HttpLoggingFilter implements Filter {
 
+    private static final String LOG_TYPE = "log_type";
+    private static final String HTTP_METHOD = "http_method";
+    private static final String REQUEST_PATH = "request_path";
+    private static final String HTTP_STATUS = "http_status";
+    private static final String RESPONSE_TIME_MS = "response_time_ms";
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
@@ -35,9 +41,7 @@ public class HttpLoggingFilter implements Filter {
             chain.doFilter(request, response);
             long responseTime = System.currentTimeMillis() - startTime;
             int status = httpServletResponse.getStatus();
-            if (is2xxStatus(status)) {
-                doResponseLogging(status, responseTime);
-            }
+            doResponseLogging(httpServletRequest, status, responseTime);
         } finally {
             MDC.clear();
         }
@@ -49,20 +53,31 @@ public class HttpLoggingFilter implements Filter {
         String queryString = httpServletRequest.getQueryString();
         String fullPath = requestURI + (queryString != null ? "?" + queryString : "");
 
+        MDC.put(LOG_TYPE, "http_request");
+        MDC.put(HTTP_METHOD, method);
+        MDC.put(REQUEST_PATH, fullPath);
+
         log.info("[REQUEST] {} {}",
                 method,
                 fullPath
         );
     }
 
-    private void doResponseLogging(int status, long responseTime) {
+    private void doResponseLogging(HttpServletRequest httpServletRequest, int status, long responseTime) {
+        String method = httpServletRequest.getMethod();
+        String requestURI = httpServletRequest.getRequestURI();
+        String queryString = httpServletRequest.getQueryString();
+        String fullPath = requestURI + (queryString != null ? "?" + queryString : "");
+
+        MDC.put(LOG_TYPE, "http_response");
+        MDC.put(HTTP_METHOD, method);
+        MDC.put(REQUEST_PATH, fullPath);
+        MDC.put(HTTP_STATUS, String.valueOf(status));
+        MDC.put(RESPONSE_TIME_MS, String.valueOf(responseTime));
+
         log.info("[RESPONSE] Status: {} | Time(ms): {}",
                 status,
                 responseTime
         );
-    }
-
-    private boolean is2xxStatus(int status) {
-        return status >= 200 && status < 300;
     }
 }

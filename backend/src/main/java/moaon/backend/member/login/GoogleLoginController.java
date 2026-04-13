@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
+import moaon.backend.member.service.JwtTokenService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,16 +23,23 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("/login/oauth2/code/google")
 @RequiredArgsConstructor
 public class GoogleLoginController {
 
     private static final String REDIRECT_BASE_KEY = "redirectBase";
 
     private final GoogleLoginService googleLoginService;
+    private final JwtTokenService jwtTokenService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @GetMapping
+    @GetMapping("templogin")
+    public void getString(HttpServletResponse response) {
+        var token = new JwtToken(jwtTokenService.createToken(1L));
+        var cookie = createTokenCookie(token);
+        response.addCookie(cookie);
+    }
+
+    @GetMapping("/login/oauth2/code/google")
     public void login(
             @RequestParam(value = "code", required = true) String code,
             @RequestParam(value = "state", required = true) String state,

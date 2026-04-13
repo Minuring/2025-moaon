@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.Sector;
@@ -47,7 +48,7 @@ class ArticleRepositoryFacadeTest {
     @Test
     void getPagedArticlesElasticSearchFirst() {
         // given
-        when(articleDocumentRepository.search(queryCondition)).thenReturn(mock(ArticleSearchResult.class));
+        when(articleDocumentRepository.search(queryCondition)).thenReturn(new ArticleSearchResult(List.of(), 0, false, null));
 
         // when
         articleRepositoryFacade.search(queryCondition);
@@ -65,7 +66,7 @@ class ArticleRepositoryFacadeTest {
 
         when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
         when(articleDocumentRepository.searchInProject(eq(project), eq(pac.toArticleCondition())))
-                .thenReturn(mock(ArticleSearchResult.class));
+                .thenReturn(new ArticleSearchResult(List.of(), 0, false, null));
 
         // when
         articleRepositoryFacade.searchInProject(project, pac);
@@ -79,13 +80,13 @@ class ArticleRepositoryFacadeTest {
         // given
         Article article = new ArticleFixtureBuilder().build();
         when(articleDBRepository.save(eq(article))).thenReturn(article);
-        IndexEvent indexEvent = new IndexEvent(article, Action.INDEXING);
 
         // when
         articleRepositoryFacade.save(article);
 
         // then
         verify(articleDBRepository).save(eq(article));
+        IndexEvent indexEvent = new IndexEvent(article.getId(), Action.INDEXING);
         verify(outboxRepository).merge(eq(indexEvent));
     }
 }

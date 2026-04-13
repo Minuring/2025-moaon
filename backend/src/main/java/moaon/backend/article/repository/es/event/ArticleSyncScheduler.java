@@ -7,7 +7,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.article.domain.Article;
-import moaon.backend.article.domain.ArticleDocument;
+import moaon.backend.article.repository.es.ArticleDocument;
 import moaon.backend.article.repository.db.ArticleDBRepository;
 import moaon.backend.article.repository.es.event.IndexEvent.Action;
 import org.springframework.data.domain.PageRequest;
@@ -26,7 +26,7 @@ public class ArticleSyncScheduler {
     private final ArticleDBRepository articleRepository;
     private final ElasticsearchClient esClient;
 
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelay = 5000)
     @Transactional
     public void pollAndProcessEvents() {
         List<IndexEvent> events = indexEventRepository.findDueToProcess(PageRequest.of(0, BATCH_SIZE));

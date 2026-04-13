@@ -31,6 +31,8 @@ services:
       SERVER_TOMCAT_THREADS_MIN_SPARE: ${SERVER_TOMCAT_THREADS_MIN_SPARE}
       SERVER_TOMCAT_CONNECTION_TIMEOUT: ${SERVER_TOMCAT_CONNECTION_TIMEOUT}
       GPT_API_KEY: ${GPT_API_KEY}
+    labels:
+      moaon.monitoring.role: app
 
   db:
     image: mysql:8.4
@@ -40,19 +42,26 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_HOST: "%"
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       TZ: Asia/Seoul
       LANG: C.UTF-8
     volumes:
-      - db-data:/var/lib/mysql
+      - ./volumes/db:/var/lib/mysql
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
+      - --performance_schema=ON
+      - --slow_query_log=ON
+      - --long_query_time=0.3
+      - --log_output=TABLE
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    labels:
+      moaon.monitoring.role: db
 
   elastic:
     build:
@@ -72,8 +81,4 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - es-data:/usr/share/elasticsearch/data
-
-volumes:
-  db-data:
-  es-data:
+      - ./volumes/es:/usr/share/elasticsearch/data

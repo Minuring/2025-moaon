@@ -1,18 +1,13 @@
 package moaon.backend.article.repository.es;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
-import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery.Builder;
-import co.elastic.clients.elasticsearch._types.query_dsl.DisMaxQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import jakarta.annotation.Nullable;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+
 import moaon.backend.article.domain.ArticleCursor;
 import moaon.backend.article.domain.ArticleSortType;
 import moaon.backend.article.domain.Sector;
@@ -25,8 +20,22 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.HighlightQuery;
+import org.springframework.data.elasticsearch.core.query.highlight.Highlight;
+import org.springframework.data.elasticsearch.core.query.highlight.HighlightField;
+import org.springframework.data.elasticsearch.core.query.highlight.HighlightParameters;
 
 public class ESArticleQueryBuilder {
+
+    private static final HighlightQuery highlightQuery = new HighlightQuery(
+            new Highlight(HighlightParameters.builder()
+                    .withPreTags("<mark>")
+                    .withPostTags("</mark>")
+                    .withFragmentSize(255)
+                    .withNumberOfFragments(1)
+                    .build(),
+                    List.of(new HighlightField("title"), new HighlightField("summary"))
+            ), ArticleDocument.class);
 
     private final List<Query> musts = new ArrayList<>();
     private final List<Query> filters = new ArrayList<>();
@@ -126,6 +135,7 @@ public class ESArticleQueryBuilder {
                 .withTrackTotalHits(true)
                 .withTrackScores(trackScores)
                 .withPageable(pageable)
+                .withHighlightQuery(highlightQuery)
                 .withTimeout(Duration.ofMillis(timeoutMillis));
 
         if (sort != null) {
@@ -152,50 +162,71 @@ public class ESArticleQueryBuilder {
             throw new IllegalArgumentException("검색어가 비어있습니다.");
         }
 
-        /*
-        1. 토큰의 갯수와 상관없이 마지막 토큰은 OR( Match + Edge-ngram(1~30) ) 매칭
-        - 마지막 토큰은 입력중인 지, 입력 완료인 지 판단할 수 없습니다. 사용자 의도에 따라 다르기도 합니다.
+        List<Query> mustQueries = new ArrayList<>();
 
-        2. 토큰의 갯수가 2개 이상이면, 마지막 토큰 이전의 모든 검색어는 "필수" 매칭
-         */
-
-        String lastToken = searchKeyword.lastToken();
-        BoolQuery.Builder lastTokenBoolQueryBuilder = QueryBuilders.bool()
-                .should(Query.of(q -> q.multiMatch(multiMatch(lastToken, 1.5f, 1.25f, 1.0f))),
-                        Query.of(q -> q.disMax(dismaxEdgeNgram(lastToken))))
-                .minimumShouldMatch("1");
-
-        return createQueryConsideringNumOfTokens(searchKeyword, lastTokenBoolQueryBuilder);
-    }
-
-    private Query createQueryConsideringNumOfTokens(SearchKeyword searchKeyword, Builder lastTokenBoolQueryBuilder) {
-        // --- 검색어가 한 단어인 경우 마지막 토큰에 대해 OR(match, Edge-ngram) ---
-        if (searchKeyword.hasOnlyOneToken()) {
-            return lastTokenBoolQueryBuilder.build()._toQuery();
+        // 1) 마지막 이전 토큰들은 모두 exact 필수
+        for (String token : searchKeyword.allTokensBeforeLastToken()) {
+            mustQueries.add(exactTokenQuery(token));
         }
 
-        // 검색어가 두 단어 이상으로 이루어진 경우 마지막 이전 단어들은 필수 매칭
-        List<Query> multiMatches = searchKeyword.allTokensBeforeLastToken().stream()
-                .map(token -> Query.of(q -> q.multiMatch(multiMatch(token, 2.0f, 1.5f, 1.0f))))
-                .toList();
-        return lastTokenBoolQueryBuilder.must(multiMatches).build()._toQuery();
+        // 2) 마지막 토큰은 exact OR prefix 중 하나는 반드시 매칭
+        //    그리고 exact가 prefix보다 더 높은 점수를 갖도록 설계
+        mustQueries.add(lastTokenRequiredQuery(searchKeyword.lastToken()));
+
+        return QueryBuilders.bool()
+                .must(mustQueries)
+                .build()
+                ._toQuery();
     }
 
-    private MultiMatchQuery multiMatch(String token, float titleBoost, float summaryBoost, float contentBoost) {
-        String title = String.format("title^%.2f", titleBoost);
-        String summary = String.format("summary^%.2f", summaryBoost);
-        String content = String.format("content^%.2f", contentBoost);
-        return MultiMatchQuery.of(m -> m.query(token).fields(title, summary, content));
-    }
+    private Query lastTokenRequiredQuery(String token) {
+        return QueryBuilders.bool()
+                .should(
+                        // exact가 기본 축
+                        exactTokenQuery(token),
 
-    private DisMaxQuery dismaxEdgeNgram(String token) {
-        return DisMaxQuery.of(d -> d
-                .tieBreaker(0.4)
-                .queries(
-                        Query.of(b -> b.match(m -> m.field("title.auto").query(token).boost(1.5f))),
-                        Query.of(b -> b.match(m -> m.field("summary.auto").query(token).boost(1.25f)))
+                        // prefix는 약한 보조 신호
+                        prefixTokenQuery(token)
                 )
-        );
+                .minimumShouldMatch("1")
+                .build()
+                ._toQuery();
+    }
+
+    private Query exactTokenQuery(String token){
+        return Query.of(q -> {
+            String title = "title^1.5";
+            String summary = "summary^1.25";
+            String content = "content^0.3";
+            return q.multiMatch(
+                    MultiMatchQuery.of(m -> m.query(token).fields(title, summary, content).operator(Operator.And).type(TextQueryType.MostFields).tieBreaker(0.3))
+            );
+        });
+    }
+
+    private Query prefixTokenQuery(String token) {
+        return Query.of(q -> q.disMax(
+                DisMaxQuery.of(d -> d
+                        .tieBreaker(0.5)
+                        .queries(
+                                Query.of(m -> m.match(mm -> mm
+                                        .field("title.edge_ngram")
+                                        .query(token)
+                                        .boost(1.0f)
+                                )),
+                                Query.of(m -> m.match(mm -> mm
+                                        .field("summary.edge_ngram")
+                                        .query(token)
+                                        .boost(0.5f)
+                                )),
+                                Query.of(m -> m.match(mm -> mm
+                                        .field("content.edge_ngram")
+                                        .query(token)
+                                        .boost(0.1f)
+                                ))
+                        )
+                )
+        ));
     }
 
     private Query createSectorQuery(Sector sector) {

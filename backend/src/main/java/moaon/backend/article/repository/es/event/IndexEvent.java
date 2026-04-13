@@ -40,8 +40,8 @@ public class IndexEvent {
     @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    public IndexEvent(Article article, Action action) {
-        this.entityId = article.getId();
+    public IndexEvent(Long entityId, Action action) {
+        this.entityId = entityId;
         this.action = action;
         this.requiredRevision = 0;
         this.processedRevision = 0;

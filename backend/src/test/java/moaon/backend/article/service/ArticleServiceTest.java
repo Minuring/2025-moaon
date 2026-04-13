@@ -61,10 +61,11 @@ class ArticleServiceTest {
                 .clicks(5)
                 .build();
         when(articleRepositoryFacade.findById(123L)).thenReturn(Optional.of(article));
+        when(articleRepositoryFacade.updateClicksCount(123L)).thenReturn(true);
 
         articleService.increaseClicksCount(123L);
 
-        verify(articleRepositoryFacade).updateClicksCount(article);
+        verify(articleRepositoryFacade).updateClicksCount(123L);
     }
 
     @DisplayName("존재하지 않는 아티클의 클릭 증가 시 예외 발생")

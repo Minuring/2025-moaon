@@ -109,7 +109,6 @@ public class ArticleFixtureBuilder {
                 .id(this.id)
                 .title(this.title)
                 .summary(this.summary)
-                .content(this.content)
                 .articleUrl(this.articleUrl)
                 .clicks(this.clicks)
                 .createdAt(this.createdAt)

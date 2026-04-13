@@ -37,10 +37,13 @@ dependencies {
 
     // lombok
     compileOnly 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
 
     // db
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'p6spy:p6spy:3.9.1'
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'com.mysql:mysql-connector-j'
 

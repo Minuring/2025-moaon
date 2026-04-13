@@ -1,16 +1,13 @@
 package moaon.backend.article.repository;
 
 import java.util.List;
-import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.ArticleCursor;
+import moaon.backend.article.dto.ArticleDto;
 
-public interface ArticleSearchResult {
-
-    List<Article> getArticles();
-
-    long getTotalCount();
-
-    boolean hasNext();
-
-    ArticleCursor getNextCursor();
+public record ArticleSearchResult(
+        List<ArticleDto> articles,
+        long totalCount,
+        boolean hasNext,
+        ArticleCursor nextCursor
+) {
 }

@@ -1,4 +1,4 @@
-package moaon.backend.article.domain;
+package moaon.backend.article.repository.es;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -7,18 +7,23 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import moaon.backend.article.domain.Article;
+import moaon.backend.article.domain.Sector;
+import moaon.backend.article.domain.Topic;
 import moaon.backend.techStack.domain.TechStack;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Alias;
@@ -45,26 +50,33 @@ public class ArticleDocument {
     private Long id;
 
     @MultiField(
-            mainField = @Field(type = FieldType.Text, analyzer = "article_common_analyzer"),
+            mainField = @Field(type = FieldType.Text, analyzer = "article_nori_analyzer"),
             otherFields = {
-                    @InnerField(suffix = "auto", type = FieldType.Text,
-                            analyzer = "article_autocomplete_index",
-                            searchAnalyzer = "article_autocomplete_search")
+                    @InnerField(suffix = "edge_ngram", type = FieldType.Text,
+                            analyzer = "edge_ngram_analyzer",
+                            searchAnalyzer = "lowercase_analyzer")
             }
     )
     private String title;
 
     @MultiField(
-            mainField = @Field(type = FieldType.Text, analyzer = "article_common_analyzer"),
+            mainField = @Field(type = FieldType.Text, analyzer = "article_nori_analyzer"),
             otherFields = {
-                    @InnerField(suffix = "auto", type = FieldType.Text,
-                            analyzer = "article_autocomplete_index",
-                            searchAnalyzer = "article_autocomplete_search")
+                    @InnerField(suffix = "edge_ngram", type = FieldType.Text,
+                            analyzer = "edge_ngram_analyzer",
+                            searchAnalyzer = "lowercase_analyzer")
             }
     )
     private String summary;
 
-    @Field(type = FieldType.Text, analyzer = "article_common_analyzer")
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, analyzer = "article_nori_analyzer"),
+            otherFields = {
+                    @InnerField(suffix = "edge_ngram", type = FieldType.Text,
+                            analyzer = "edge_ngram_analyzer",
+                            searchAnalyzer = "lowercase_analyzer")
+            }
+    )
     private String content;
 
     @Field(type = FieldType.Keyword)
@@ -73,12 +85,7 @@ public class ArticleDocument {
     @Field(type = FieldType.Keyword)
     private Set<Topic> topics;
 
-    @MultiField(
-            mainField = @Field(type = FieldType.Keyword),
-            otherFields = {
-                    @InnerField(suffix = "text", type = FieldType.Text, analyzer = "article_common_analyzer")
-            }
-    )
+    @Field(type = FieldType.Keyword)
     private Set<String> techStacks;
 
     @Field(type = FieldType.Integer)
@@ -86,6 +93,15 @@ public class ArticleDocument {
 
     @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second_fraction)
     private LocalDateTime createdAt;
+
+    @Field(type = FieldType.Keyword)
+    private Long projectId;
+
+    @Field(type = FieldType.Keyword)
+    private String projectTitle;
+
+    @Field(type = FieldType.Keyword)
+    private String url;
 
     public ArticleDocument(Article article) {
         this.id = article.getId();
@@ -97,6 +113,9 @@ public class ArticleDocument {
         this.techStacks = setTechStacks(article.getTechStacks());
         this.clicks = article.getClicks();
         this.createdAt = article.getCreatedAt().truncatedTo(ChronoUnit.MILLIS);
+        this.projectId = article.getProject().getId();
+        this.projectTitle = article.getProject().getTitle();
+        this.url = article.getArticleUrl();
     }
 
     private Set<String> setTechStacks(List<TechStack> techStacks) {

@@ -10,6 +10,11 @@ import Badge from "./Badge/Badge";
 import useArticleClick from "./hooks/useArticleClick";
 import ProjectTitle from "./ProjectTitle/ProjectTitleLink";
 
+const resolveHighlight = (highlight: string | string[] | null | undefined, fallback: string): string => {
+  const raw = Array.isArray(highlight) ? highlight[0] : highlight;
+  return (raw ?? fallback).replace(/<(?!\/?mark\b)[^>]*>/g, "");
+};
+
 interface CardProps {
   article: Article | ProjectArticle;
 }
@@ -32,8 +37,7 @@ const getProjectInfo = (article: Article | ProjectArticle) => {
 };
 
 function ArticleCard({ article }: CardProps) {
-  const { title, summary, techStacks, url, sector, clicks, id, topics } =
-    article;
+  const { title, summary, techStacks, url, sector, clicks, id, topics, highlightTitle, highlightSummary } = article;
   const { projectId, projectTitle } = getProjectInfo(article);
 
   const navigate = useNavigate();
@@ -70,8 +74,18 @@ function ArticleCard({ article }: CardProps) {
             <ProjectTitle projectTitle={projectTitle} color={color} />
           </S.ProjectLinkButton>
         )}
-        <S.CardTitle>{title}</S.CardTitle>
-        <S.CardSummary>{summary}</S.CardSummary>
+        <S.CardTitle
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: highlight from ES contains only <mark> tags
+          dangerouslySetInnerHTML={{
+            __html: resolveHighlight(highlightTitle, title),
+          }}
+        />
+        <S.CardSummary
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: highlight from ES contains only <mark> tags
+          dangerouslySetInnerHTML={{
+            __html: resolveHighlight(highlightSummary, summary),
+          }}
+        />
         <S.BadgeList>
           <Badge>{label}</Badge>
           {topics.map((topic) => (

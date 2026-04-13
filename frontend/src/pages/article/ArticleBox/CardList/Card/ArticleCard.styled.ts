@@ -29,6 +29,11 @@ export const CardTitle = styled.h2`
   height: 2.8125rem;
   ${textOverflowEllipsis(2)}
 
+  mark {
+    all: unset;
+    background-color: #ffe066;
+  }
+
   ${BP_768} {
     font-size: 1rem;
   }
@@ -41,6 +46,11 @@ export const CardSummary = styled.span`
   height: 3.75rem;
   margin-bottom: 0.5rem;
   ${textOverflowEllipsis(3)};
+
+  mark {
+    all: unset;
+    background-color: #ffe066;
+  }
 `;
 
 export const CardInfoBox = styled.div`

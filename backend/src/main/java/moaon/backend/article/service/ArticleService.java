@@ -12,7 +12,7 @@ import moaon.backend.article.domain.Sector;
 import moaon.backend.article.domain.Topic;
 import moaon.backend.article.dto.ArticleCreateRequest;
 import moaon.backend.article.dto.ArticleQueryCondition;
-import moaon.backend.article.dto.ArticleResponse;
+import moaon.backend.article.dto.ArticleListResponse;
 import moaon.backend.article.repository.ArticleRepositoryFacade;
 import moaon.backend.article.repository.ArticleSearchResult;
 import moaon.backend.article.repository.db.ArticleContentRepository;
@@ -38,9 +38,9 @@ public class ArticleService {
     private final ProjectRepository projectRepository;
     private final TechStackRepository techStackRepository;
 
-    public ArticleResponse getPagedArticles(ArticleQueryCondition queryCondition) {
+    public ArticleListResponse getPagedArticles(ArticleQueryCondition queryCondition) {
         ArticleSearchResult result = articleRepositoryFacade.search(queryCondition);
-        return ArticleResponse.from(result);
+        return ArticleListResponse.from(result);
     }
 
     public ProjectArticleResponse getByProjectId(long id, ProjectArticleQueryCondition condition) {
@@ -49,14 +49,15 @@ public class ArticleService {
 
         ArticleSearchResult filteredArticles = articleRepositoryFacade.searchInProject(project, condition);
         Map<Sector, Long> articleCountBySector = project.countArticlesGroupBySector();
-        return ProjectArticleResponse.of(filteredArticles.getArticles(), articleCountBySector);
+        return ProjectArticleResponse.of(filteredArticles.articles(), articleCountBySector);
     }
 
     @Transactional
     public void increaseClicksCount(long id) {
-        Article article = articleRepositoryFacade.findById(id)
-                .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_NOT_FOUND));
-        articleRepositoryFacade.updateClicksCount(article);
+        boolean succeed = articleRepositoryFacade.updateClicksCount(id);
+        if (!succeed) {
+            throw new CustomException(ErrorCode.ARTICLE_NOT_FOUND);
+        }
     }
 
     @Transactional

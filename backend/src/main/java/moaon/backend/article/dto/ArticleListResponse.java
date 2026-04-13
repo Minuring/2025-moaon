@@ -4,19 +4,19 @@ import java.util.List;
 import moaon.backend.article.domain.ArticleCursor;
 import moaon.backend.article.repository.ArticleSearchResult;
 
-public record ArticleResponse(
-        List<ArticleData> contents,
+public record ArticleListResponse(
+        List<ArticleDto> contents,
         int totalCount,
         boolean hasNext,
         String nextCursor
 ) {
 
-    public static ArticleResponse from(ArticleSearchResult searchResult) {
-        return new ArticleResponse(
-                ArticleData.from(searchResult.getArticles()),
-                (int) searchResult.getTotalCount(),
+    public static ArticleListResponse from(ArticleSearchResult searchResult) {
+        return new ArticleListResponse(
+                searchResult.articles(),
+                (int) searchResult.totalCount(),
                 searchResult.hasNext(),
-                nextCursorToString(searchResult.getNextCursor())
+                nextCursorToString(searchResult.nextCursor())
         );
     }
 

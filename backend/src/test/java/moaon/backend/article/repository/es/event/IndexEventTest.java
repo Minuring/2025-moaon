@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class IndexEventTest {
 
     @Test
-    @DisplayName("Article로 IndexEvent 생성 시 필드가 올바르게 초기화된다")
+    @DisplayName("entityId로 IndexEvent 생성 시 필드가 올바르게 초기화된다")
     void createIndexEventFromArticle() {
         // given
         Article article = Article.builder()
@@ -19,7 +19,7 @@ class IndexEventTest {
                 .build();
 
         // when
-        IndexEvent event = new IndexEvent(article, Action.INDEXING);
+        IndexEvent event = new IndexEvent(article.getId(), Action.INDEXING);
 
         // then
         assertThat(event.getEntityId()).isEqualTo(100L);

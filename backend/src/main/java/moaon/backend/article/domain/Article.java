@@ -12,12 +12,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,6 +36,8 @@ import moaon.backend.global.exception.custom.ErrorCode;
 import moaon.backend.project.domain.Project;
 import moaon.backend.techStack.domain.ArticleTechStack;
 import moaon.backend.techStack.domain.TechStack;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -56,8 +62,8 @@ public class Article extends BaseTimeEntity {
     @Column(nullable = false)
     private String summary;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String content;
+    @OneToOne(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private ArticleContentSeparated contentSeparated;
 
     @Column(nullable = false, length = 500)
     private String articleUrl;
@@ -74,6 +80,7 @@ public class Article extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @Fetch(FetchMode.JOIN)
     private List<ArticleTechStack> techStacks = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
@@ -103,7 +110,7 @@ public class Article extends BaseTimeEntity {
     ) {
         this.title = title;
         this.summary = summary;
-        this.content = content;
+        this.contentSeparated = new ArticleContentSeparated(this, content);
         this.articleUrl = articleUrl;
         this.clicks = 0;
         this.createdAt = createdAt;
@@ -129,5 +136,12 @@ public class Article extends BaseTimeEntity {
         return techStacks.stream()
                 .map(ArticleTechStack::getTechStack)
                 .toList();
+    }
+
+    public String getContent() {
+        if (contentSeparated == null) {
+            return "";
+        }
+        return contentSeparated.getContent();
     }
 }

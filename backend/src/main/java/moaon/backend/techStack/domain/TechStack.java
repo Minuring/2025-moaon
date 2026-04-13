@@ -20,7 +20,6 @@ import org.hibernate.annotations.BatchSize;
 @Getter
 @EqualsAndHashCode(of = "id")
 @ToString
-@BatchSize(size = 100)
 public class TechStack {
 
     @Id

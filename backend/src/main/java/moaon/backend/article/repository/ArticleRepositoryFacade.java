@@ -1,6 +1,5 @@
 package moaon.backend.article.repository;
 
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,14 +23,8 @@ public class ArticleRepositoryFacade {
     private final ArticleDocumentRepository elasticSearch;
     private final IndexEventRepository indexEventRepository;
 
-    @CircuitBreaker(name = "articleSearchCB", fallbackMethod = "searchWithDB")
     public ArticleSearchResult search(ArticleQueryCondition condition) {
         return elasticSearch.search(condition);
-    }
-
-    public ArticleSearchResult searchWithDB(ArticleQueryCondition condition, Exception e) {
-        log.error("검색엔진이 실패하였습니다. 데이터베이스로 검색을 시도합니다 : {}", e.getMessage());
-        return database.findWithSearchConditions(condition);
     }
 
     public ArticleSearchResult searchInProject(Project project, ProjectArticleQueryCondition condition) {
@@ -42,14 +35,15 @@ public class ArticleRepositoryFacade {
         return database.findById(id);
     }
 
-    public void updateClicksCount(Article article) {
-        database.increaseClickCount(article.getId());
-        indexEventRepository.merge(new IndexEvent(article, Action.INDEXING));
+    public boolean updateClicksCount(Long id) {
+        int modified = database.increaseClickCount(id);
+        indexEventRepository.merge(new IndexEvent(id, Action.INDEXING));
+        return modified != 0;
     }
 
     public Article save(Article article) {
         Article saved = database.save(article);
-        indexEventRepository.merge(new IndexEvent(saved, Action.INDEXING));
+        indexEventRepository.merge(new IndexEvent(saved.getId(), Action.INDEXING));
         return saved;
     }
 }

@@ -1,7 +1,7 @@
 {
   "analysis": {
     "analyzer": {
-      "article_common_analyzer": {
+      "article_nori_analyzer": {
         "type": "custom",
         "tokenizer": "nori_tokenizer_with_dict",
         "char_filter": [
@@ -14,14 +14,14 @@
           "article_common_synonym"
         ]
       },
-      "article_autocomplete_index": {
+      "edge_ngram_analyzer": {
         "type": "custom",
         "tokenizer": "edge_ngram_tokenizer",
         "filter": [
           "lowercase"
         ]
       },
-      "article_autocomplete_search": {
+      "lowercase_analyzer": {
         "type": "custom",
         "tokenizer": "nori_tokenizer_with_dict",
         "filter": [

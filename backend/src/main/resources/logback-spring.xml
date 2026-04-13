@@ -30,13 +30,13 @@
         </encoder>
     </appender>
 
-    <springProfile name="local,test,new">
+    <springProfile name="local,test">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
         </root>
     </springProfile>
 
-    <springProfile name="dev,prod">
+    <springProfile name="new,dev,prod">
         <root level="INFO">
             <appender-ref ref="JSON"/>
         </root>

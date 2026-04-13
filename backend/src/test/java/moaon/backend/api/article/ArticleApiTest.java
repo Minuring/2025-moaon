@@ -11,24 +11,27 @@ import static org.springframework.restdocs.request.RequestDocumentation.queryPar
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+
 import moaon.backend.api.BaseApiTest;
 import moaon.backend.article.domain.Article;
+import moaon.backend.article.domain.ArticleSortType;
 import moaon.backend.article.domain.Sector;
 import moaon.backend.article.domain.Topic;
 import moaon.backend.article.dto.ArticleCreateRequest;
-import moaon.backend.article.dto.ArticleData;
-import moaon.backend.article.dto.ArticleResponse;
-import moaon.backend.article.repository.es.ArticleDocumentOperations;
+import moaon.backend.article.dto.ArticleDto;
+import moaon.backend.article.dto.ArticleListResponse;
+import moaon.backend.article.repository.es.ArticleDocumentRepository;
 import moaon.backend.fixture.ArticleFixtureBuilder;
+import moaon.backend.fixture.FakeArticleSearchResult;
 import moaon.backend.fixture.Fixture;
 import moaon.backend.fixture.ProjectFixtureBuilder;
 import moaon.backend.fixture.RepositoryHelper;
 import moaon.backend.global.config.QueryDslConfig;
 import moaon.backend.member.domain.Member;
-import moaon.backend.member.repository.MemberRepository;
 import moaon.backend.member.service.JwtTokenService;
 import moaon.backend.member.service.MemberService;
 import moaon.backend.project.domain.Project;
@@ -50,17 +53,14 @@ public class ArticleApiTest extends BaseApiTest {
     @Autowired
     protected RepositoryHelper repositoryHelper;
 
-    @MockitoBean
-    private ArticleDocumentOperations documentOperations;
-
-    @Autowired
-    private MemberRepository memberRepository;
-
     @Autowired
     private JwtTokenService jwtTokenService;
 
     @MockitoBean
     private MemberService memberService;
+
+    @MockitoBean
+    private ArticleDocumentRepository articleDocumentRepository;
 
     private String token;
 
@@ -219,8 +219,13 @@ public class ArticleApiTest extends BaseApiTest {
                         .build()
         );
 
+        Mockito.when(articleDocumentRepository.search(Mockito.any()))
+                .thenReturn(FakeArticleSearchResult.create(
+                        List.of(ArticleDto.from(articleClickRankFirst), ArticleDto.from(articleClickRankSecond)),
+                        3, 2, ArticleSortType.CLICKS));
+
         // when
-        ArticleResponse actualResponse = RestAssured.given(documentationSpecification).log().all()
+        ArticleListResponse actualResponse = RestAssured.given(documentationSpecification).log().all()
                 .queryParams("sort", "clicks")
                 .queryParams("search", filteredSearch)
                 .queryParams("sector", filteredSector.getName())
@@ -232,11 +237,11 @@ public class ArticleApiTest extends BaseApiTest {
                 .when().get("/articles")
                 .then().log().all()
                 .statusCode(200)
-                .extract().as(ArticleResponse.class);
+                .extract().as(ArticleListResponse.class);
 
         // then
         assertThat(actualResponse.contents())
-                .extracting(ArticleData::id)
+                .extracting(ArticleDto::id)
                 .containsExactly(articleClickRankFirst.getId(), articleClickRankSecond.getId());
     }
 
@@ -313,6 +318,8 @@ public class ArticleApiTest extends BaseApiTest {
                 fieldWithPath("contents[].sector").description("직군"),
                 fieldWithPath("contents[].topics").description("아티클 주제"),
                 fieldWithPath("contents[].createdAt").description("생성일시"),
+                fieldWithPath("contents[].highlightTitle").description("제목 하이라이트"),
+                fieldWithPath("contents[].highlightSummary").description("요약 하이라이트"),
                 fieldWithPath("totalCount").description("필터링 걸린 데이터의 전체 개수"),
                 fieldWithPath("hasNext").description("다음 페이지 존재 여부"),
                 fieldWithPath("nextCursor").description("다음 요청 커서")

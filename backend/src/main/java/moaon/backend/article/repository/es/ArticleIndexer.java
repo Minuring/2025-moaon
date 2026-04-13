@@ -9,7 +9,6 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.article.domain.Article;
-import moaon.backend.article.domain.ArticleDocument;
 import moaon.backend.article.repository.db.ArticleDBRepository;
 import org.springframework.data.elasticsearch.annotations.Alias;
 import org.springframework.data.elasticsearch.annotations.Document;

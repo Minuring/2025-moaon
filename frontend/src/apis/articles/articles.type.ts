@@ -21,6 +21,8 @@ export interface Article {
   topics: AllTopicKey[];
   sector: ArticleSectorKey;
   createdAt: string;
+  highlightTitle: string[] | null;
+  highlightSummary: string[] | null;
 }
 
 export interface PostArticleData {

@@ -5,6 +5,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import moaon.backend.article.dto.ArticleCreateRequest;
+import moaon.backend.article.dto.ArticleQueryCondition;
+import moaon.backend.article.dto.ArticleListResponse;
+import moaon.backend.article.dto.ArticleSearchRequest;
 import moaon.backend.article.service.ArticleService;
 import moaon.backend.global.cookie.AccessHistory;
 import moaon.backend.global.cookie.TrackingCookieManager;
@@ -13,7 +16,10 @@ import moaon.backend.member.service.MemberService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,6 +42,12 @@ public class ArticleController {
         this.cookieManager = cookieManager;
         this.articleService = articleService;
         this.memberService = memberService;
+    }
+
+    @GetMapping
+    public ResponseEntity<ArticleListResponse> search(@ModelAttribute @Validated ArticleSearchRequest request) {
+        ArticleQueryCondition condition = request.toCondition();
+        return ResponseEntity.ok(articleService.getPagedArticles(condition));
     }
 
     @PostMapping

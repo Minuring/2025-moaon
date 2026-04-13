@@ -15,16 +15,17 @@ import static org.springframework.restdocs.request.RequestDocumentation.queryPar
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
+
 import java.util.List;
+
 import moaon.backend.api.BaseApiTest;
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.Sector;
-import moaon.backend.article.dto.ArticleDetailResponse;
+import moaon.backend.article.dto.ArticleDto;
 import moaon.backend.article.dto.ArticleQueryCondition;
-import moaon.backend.article.dto.ArticleSectorCount;
-import moaon.backend.article.repository.db.DBArticleSearchResult;
 import moaon.backend.article.repository.es.ArticleDocumentRepository;
 import moaon.backend.fixture.ArticleFixtureBuilder;
+import moaon.backend.fixture.FakeArticleSearchResult;
 import moaon.backend.fixture.Fixture;
 import moaon.backend.fixture.ProjectFixtureBuilder;
 import moaon.backend.fixture.RepositoryHelper;
@@ -300,12 +301,12 @@ public class ProjectApiTest extends BaseApiTest {
         );
 
         when(articleDocumentRepository.searchInProject(eq(targetProject), any(ArticleQueryCondition.class)))
-                .thenReturn(new DBArticleSearchResult(
-                        List.of(filteredArticle1, filteredArticle2, filteredArticle3),
+                .thenReturn(FakeArticleSearchResult.create(
+                        List.of(ArticleDto.from(filteredArticle1), ArticleDto.from(filteredArticle2), ArticleDto.from(filteredArticle3)),
                         6, 20, null
                 ));
 
-        // when
+        // whenr
         ProjectArticleResponse actualResponse = RestAssured.given(documentationSpecification).log().all()
                 .queryParams("sector", filteredSector.getName())
                 .queryParams("search", filteredSearch)
@@ -319,16 +320,16 @@ public class ProjectApiTest extends BaseApiTest {
         assertAll(
                 () -> assertThat(actualResponse.counts())
                         .containsExactlyInAnyOrder(
-                                new ArticleSectorCount("all", 5),
-                                ArticleSectorCount.of(Sector.BE, 4),
-                                ArticleSectorCount.of(Sector.FE, 1),
-                                ArticleSectorCount.of(Sector.IOS, 0),
-                                ArticleSectorCount.of(Sector.ANDROID, 0),
-                                ArticleSectorCount.of(Sector.INFRA, 0),
-                                ArticleSectorCount.of(Sector.NON_TECH, 0)
+                                new ProjectArticleResponse.ArticleSectorCount("all", 5),
+                                ProjectArticleResponse.ArticleSectorCount.of(Sector.BE, 4),
+                                ProjectArticleResponse.ArticleSectorCount.of(Sector.FE, 1),
+                                ProjectArticleResponse.ArticleSectorCount.of(Sector.IOS, 0),
+                                ProjectArticleResponse.ArticleSectorCount.of(Sector.ANDROID, 0),
+                                ProjectArticleResponse.ArticleSectorCount.of(Sector.INFRA, 0),
+                                ProjectArticleResponse.ArticleSectorCount.of(Sector.NON_TECH, 0)
                         ),
                 () -> assertThat(actualResponse.articles())
-                        .extracting(ArticleDetailResponse::id)
+                        .extracting(ArticleDto::id)
                         .containsExactlyInAnyOrder(
                                 filteredArticle1.getId(),
                                 filteredArticle2.getId(),
