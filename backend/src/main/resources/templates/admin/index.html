@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>검색 어드민</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <span class="navbar-brand fw-bold">검색 어드민</span>
+    </div>
+</nav>
+
+<div class="container">
+    <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-synonym" type="button">Synonym 사전</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-nori" type="button">Nori 사전</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-case" type="button">Search Case</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- ── Synonym 탭 ── -->
+        <div class="tab-pane fade show active" id="tab-synonym" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Synonym 사전</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-sm" onclick="synOpenAddModal()">추가</button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="synReload()">Reload 실행</button>
+                </div>
+            </div>
+            <div id="syn-alert" class="mb-3"></div>
+            <table class="table table-bordered table-sm">
+                <thead class="table-light">
+                <tr>
+                    <th style="width:50px">ID</th>
+                    <th>동의어 목록</th>
+                    <th>원본 문자열</th>
+                    <th style="width:70px">수정</th>
+                    <th style="width:70px">삭제</th>
+                </tr>
+                </thead>
+                <tbody id="syn-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- ── Nori 탭 ── -->
+        <div class="tab-pane fade" id="tab-nori" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Nori 사용자 사전</h5>
+                <button class="btn btn-primary btn-sm" onclick="noriOpenAddModal()">추가</button>
+            </div>
+            <div id="nori-reindex-banner" class="mb-3"></div>
+            <div id="nori-alert" class="mb-3"></div>
+            <table class="table table-bordered table-sm">
+                <thead class="table-light">
+                <tr>
+                    <th style="width:50px">ID</th>
+                    <th>표면어</th>
+                    <th>분해 토큰</th>
+                    <th>원본 문자열</th>
+                    <th style="width:70px">수정</th>
+                    <th style="width:70px">삭제</th>
+                </tr>
+                </thead>
+                <tbody id="nori-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- ── Search Case 탭 ── -->
+        <div class="tab-pane fade" id="tab-case" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Search Case 대시보드</h5>
+                <div class="d-flex gap-2 align-items-center">
+                    <select id="case-status-filter" class="form-select form-select-sm w-auto">
+                        <option value="">전체</option>
+                        <option value="NEW">NEW</option>
+                        <option value="BAD">BAD</option>
+                        <option value="GOOD">GOOD</option>
+                        <option value="SKIP">SKIP</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="caseLoad(0)">필터</button>
+                </div>
+            </div>
+            <div id="case-alert" class="mb-3"></div>
+            <table class="table table-hover table-sm">
+                <thead class="table-light">
+                <tr>
+                    <th>점수</th>
+                    <th>검색어</th>
+                    <th>결과수</th>
+                    <th>응답(ms)</th>
+                    <th>의심 플래그</th>
+                    <th>상태</th>
+                    <th>검색일시</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody id="case-table-body"></tbody>
+            </table>
+            <nav id="case-pagination"></nav>
+        </div>
+
+    </div>
+</div>
+
+<!-- Synonym 모달 -->
+<div class="modal fade" id="synModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="syn-modal-title">Synonym 추가</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label">동의어 (쉼표로 구분)</label>
+                <input type="text" class="form-control" id="syn-raw-input" placeholder="ci cd, cicd, continuous integration">
+                <div class="form-text">term이 1개 이상이어야 합니다.</div>
+                <input type="hidden" id="syn-editing-id">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="synSave()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nori 모달 -->
+<div class="modal fade" id="noriModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="nori-modal-title">Nori 항목 추가</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">표면어 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="nori-surface-input" placeholder="세종시">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">분해 토큰 (공백 구분, 선택)</label>
+                    <input type="text" class="form-control" id="nori-segments-input" placeholder="세종 시">
+                    <div class="form-text">없으면 비워두세요.</div>
+                </div>
+                <input type="hidden" id="nori-editing-id">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="noriSave()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── 공통 유틸 ──────────────────────────────────────
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function showAlert(areaId, message, type) {
+    document.getElementById(areaId).innerHTML =
+        `<div class="alert alert-${type} alert-dismissible fade show">
+            ${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+         </div>`;
+}
+
+// ── Synonym ────────────────────────────────────────
+document.getElementById('adminTabs').querySelector('[data-bs-target="#tab-synonym"]')
+    .addEventListener('shown.bs.tab', synLoad);
+
+function synLoad() {
+    fetch('/admin/api/dictionaries/synonyms')
+        .then(r => r.json()).then(synRender)
+        .catch(() => showAlert('syn-alert', '목록 로드 실패', 'danger'));
+}
+
+function synRender(entries) {
+    const tbody = document.getElementById('syn-table-body');
+    if (!entries.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">항목이 없습니다.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = entries.map(e => `
+        <tr>
+            <td>${e.id}</td>
+            <td>${e.terms.join(' / ')}</td>
+            <td><code>${escapeHtml(e.raw)}</code></td>
+            <td><button class="btn btn-outline-secondary btn-sm"
+                onclick="synOpenEditModal(${e.id}, '${escapeHtml(e.raw)}')">수정</button></td>
+            <td><button class="btn btn-outline-danger btn-sm" onclick="synDelete(${e.id})">삭제</button></td>
+        </tr>`).join('');
+}
+
+function synOpenAddModal() {
+    document.getElementById('syn-modal-title').textContent = 'Synonym 추가';
+    document.getElementById('syn-raw-input').value = '';
+    document.getElementById('syn-editing-id').value = '';
+    new bootstrap.Modal(document.getElementById('synModal')).show();
+}
+function synOpenEditModal(id, raw) {
+    document.getElementById('syn-modal-title').textContent = 'Synonym 수정';
+    document.getElementById('syn-raw-input').value = raw;
+    document.getElementById('syn-editing-id').value = id;
+    new bootstrap.Modal(document.getElementById('synModal')).show();
+}
+function synSave() {
+    const raw = document.getElementById('syn-raw-input').value;
+    const id  = document.getElementById('syn-editing-id').value;
+    const terms = raw.split(',').map(t => t.trim()).filter(t => t);
+    if (!terms.length) { showAlert('syn-alert', '유효한 term을 입력해주세요.', 'warning'); return; }
+    const url    = id ? `/admin/api/dictionaries/synonyms/${id}` : '/admin/api/dictionaries/synonyms';
+    const method = id ? 'PUT' : 'POST';
+    fetch(url, {method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({terms})})
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+        .then(() => {
+            bootstrap.Modal.getInstance(document.getElementById('synModal')).hide();
+            synLoad();
+            showAlert('syn-alert', '저장되었습니다.', 'success');
+        })
+        .catch(() => showAlert('syn-alert', '저장에 실패했습니다.', 'danger'));
+}
+function synDelete(id) {
+    if (!confirm('삭제하시겠습니까?')) return;
+    fetch(`/admin/api/dictionaries/synonyms/${id}`, {method: 'DELETE'})
+        .then(r => { if (!r.ok) throw new Error(); })
+        .then(() => { synLoad(); showAlert('syn-alert', '삭제되었습니다.', 'success'); })
+        .catch(() => showAlert('syn-alert', '삭제에 실패했습니다.', 'danger'));
+}
+function synReload() {
+    const btn = event.currentTarget;
+    btn.disabled = true;
+    btn.textContent = 'Reload 중…';
+    showAlert('syn-alert', 'ES에 reload 요청 중입니다…', 'info');
+    fetch('/admin/api/dictionaries/synonyms/reload', {method: 'POST'})
+        .then(r => r.json())
+        .then(data => showAlert('syn-alert', data.message, data.success ? 'success' : 'danger'))
+        .catch(() => showAlert('syn-alert', 'Reload 요청 실패', 'danger'))
+        .finally(() => { btn.disabled = false; btn.textContent = 'Reload 실행'; });
+}
+
+// ── Nori ──────────────────────────────────────────
+document.getElementById('adminTabs').querySelector('[data-bs-target="#tab-nori"]')
+    .addEventListener('shown.bs.tab', () => { noriLoad(); noriLoadReindexStatus(); });
+
+function noriLoad() {
+    fetch('/admin/api/dictionaries/nori')
+        .then(r => r.json()).then(noriRender)
+        .catch(() => showAlert('nori-alert', '목록 로드 실패', 'danger'));
+}
+function noriLoadReindexStatus() {
+    fetch('/admin/api/dictionaries/nori/reindex-status')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('nori-reindex-banner').innerHTML = data.reindexRequired
+                ? '<div class="alert alert-warning mb-0">변경 있음 — 다음 새벽 전체 재색인 시 반영됩니다.</div>'
+                : '<div class="alert alert-success mb-0">변경 없음</div>';
+        })
+        .catch(() => showAlert('nori-alert', '재색인 상태 조회 실패', 'danger'));
+}
+function noriRender(entries) {
+    const tbody = document.getElementById('nori-table-body');
+    if (!entries.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">항목이 없습니다.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = entries.map(e => `
+        <tr>
+            <td>${e.id}</td>
+            <td>${e.surface}</td>
+            <td>${e.segments.length ? e.segments.join(' / ') : '-'}</td>
+            <td><code>${escapeHtml(e.raw)}</code></td>
+            <td><button class="btn btn-outline-secondary btn-sm"
+                onclick="noriOpenEditModal(${e.id}, '${escapeHtml(e.surface)}', '${escapeHtml(e.segments.join(' '))}')">수정</button></td>
+            <td><button class="btn btn-outline-danger btn-sm" onclick="noriDelete(${e.id})">삭제</button></td>
+        </tr>`).join('');
+}
+function noriOpenAddModal() {
+    document.getElementById('nori-modal-title').textContent = 'Nori 항목 추가';
+    document.getElementById('nori-surface-input').value = '';
+    document.getElementById('nori-segments-input').value = '';
+    document.getElementById('nori-editing-id').value = '';
+    new bootstrap.Modal(document.getElementById('noriModal')).show();
+}
+function noriOpenEditModal(id, surface, segmentsStr) {
+    document.getElementById('nori-modal-title').textContent = 'Nori 항목 수정';
+    document.getElementById('nori-surface-input').value = surface;
+    document.getElementById('nori-segments-input').value = segmentsStr;
+    document.getElementById('nori-editing-id').value = id;
+    new bootstrap.Modal(document.getElementById('noriModal')).show();
+}
+function noriSave() {
+    const surface     = document.getElementById('nori-surface-input').value.trim();
+    const segmentsStr = document.getElementById('nori-segments-input').value.trim();
+    const id          = document.getElementById('nori-editing-id').value;
+    if (!surface) { showAlert('nori-alert', '표면어를 입력해주세요.', 'warning'); return; }
+    const segments = segmentsStr ? segmentsStr.split(/\s+/).filter(s => s) : [];
+    const url    = id ? `/admin/api/dictionaries/nori/${id}` : '/admin/api/dictionaries/nori';
+    const method = id ? 'PUT' : 'POST';
+    fetch(url, {method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({surface, segments})})
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+        .then(() => {
+            bootstrap.Modal.getInstance(document.getElementById('noriModal')).hide();
+            noriLoad(); noriLoadReindexStatus();
+            showAlert('nori-alert', '저장되었습니다.', 'success');
+        })
+        .catch(() => showAlert('nori-alert', '저장에 실패했습니다.', 'danger'));
+}
+function noriDelete(id) {
+    if (!confirm('삭제하시겠습니까?')) return;
+    fetch(`/admin/api/dictionaries/nori/${id}`, {method: 'DELETE'})
+        .then(r => { if (!r.ok) throw new Error(); })
+        .then(() => { noriLoad(); noriLoadReindexStatus(); showAlert('nori-alert', '삭제되었습니다.', 'success'); })
+        .catch(() => showAlert('nori-alert', '삭제에 실패했습니다.', 'danger'));
+}
+
+// ── Search Case ────────────────────────────────────
+let casePage = 0;
+document.getElementById('adminTabs').querySelector('[data-bs-target="#tab-case"]')
+    .addEventListener('shown.bs.tab', () => caseLoad(0));
+
+function caseLoad(page) {
+    casePage = page;
+    const status = document.getElementById('case-status-filter').value;
+    const params = new URLSearchParams({page, size: 20});
+    if (status) params.set('status', status);
+    fetch('/admin/api/search-cases?' + params)
+        .then(r => r.json()).then(caseRender)
+        .catch(() => showAlert('case-alert', '목록 로드 실패', 'danger'));
+}
+
+const statusBadge = {BAD:'danger', GOOD:'success', SKIP:'secondary', NEW:'warning text-dark'};
+
+function caseRender(page) {
+    const tbody = document.getElementById('case-table-body');
+    if (!page.content.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">케이스가 없습니다.</td></tr>';
+        document.getElementById('case-pagination').innerHTML = '';
+        return;
+    }
+    tbody.innerHTML = page.content.map(c => `
+        <tr>
+            <td>${c.badCaseScore}</td>
+            <td>${escapeHtml(c.query)}</td>
+            <td>${c.resultCount}</td>
+            <td>${c.queryTimeMs}</td>
+            <td>${(c.suspectFlags || []).join(', ')}</td>
+            <td><span class="badge bg-${statusBadge[c.status] || 'secondary'}">${c.status}</span></td>
+            <td>${c.searchedAt ? c.searchedAt.substring(0, 16).replace('T', ' ') : ''}</td>
+            <td><a href="/admin/search-cases/${c.id}" class="btn btn-sm btn-outline-primary">상세</a></td>
+        </tr>`).join('');
+
+    if (page.totalPages <= 1) { document.getElementById('case-pagination').innerHTML = ''; return; }
+    const pages = Array.from({length: page.totalPages}, (_, i) =>
+        `<li class="page-item ${i === casePage ? 'active' : ''}">
+            <button class="page-link" onclick="caseLoad(${i})">${i + 1}</button>
+         </li>`).join('');
+    document.getElementById('case-pagination').innerHTML =
+        `<ul class="pagination pagination-sm">${pages}</ul>`;
+}
+
+// 첫 탭(Synonym) 초기 로드
+synLoad();
+</script>
+</body>
+</html>

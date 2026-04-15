@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/admin/dictionaries/nori")
+@RequestMapping("/admin/api/dictionaries/nori")
 @RequiredArgsConstructor
 public class NoriApiController {
 

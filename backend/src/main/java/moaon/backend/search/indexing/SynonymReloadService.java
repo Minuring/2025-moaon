@@ -1,6 +1,8 @@
 package moaon.backend.search.indexing;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.indices.ReloadSearchAnalyzersResponse;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.search.dictionary.dto.ReloadResponse;
@@ -19,9 +21,15 @@ public class SynonymReloadService {
 
     public ReloadResponse reload() {
         try {
-            elasticsearchClient.indices().reloadSearchAnalyzers(r -> r.index(articleIndex));
-            log.info("Synonym reload 성공: index={}", articleIndex);
-            return new ReloadResponse(true, "synonym reload 요청이 완료되었습니다.");
+            ReloadSearchAnalyzersResponse response =
+                    elasticsearchClient.indices().reloadSearchAnalyzers(r -> r.index(articleIndex));
+
+            String detail = response.reloadDetails().stream()
+                    .map(d -> d.index() + " → " + d.reloadedAnalyzers())
+                    .collect(Collectors.joining(", "));
+
+            log.info("Synonym reload 성공: {}", detail);
+            return new ReloadResponse(true, "ES synonym reload 완료: " + detail);
         } catch (Exception e) {
             log.error("Synonym reload 실패", e);
             return new ReloadResponse(false, "synonym reload 실패: " + e.getMessage());

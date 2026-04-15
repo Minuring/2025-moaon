@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/admin/dictionaries/synonyms")
+@RequestMapping("/admin/api/dictionaries/synonyms")
 @RequiredArgsConstructor
 public class SynonymApiController {
 
