@@ -1,1 +1,0 @@
-RENAME TABLE es_event_outbox TO event_outbox;
