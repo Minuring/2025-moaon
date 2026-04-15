@@ -4,7 +4,9 @@ import java.util.List;
 import moaon.backend.article.domain.ArticleCursor;
 import moaon.backend.article.domain.ArticleSortType;
 import moaon.backend.article.dto.ArticleDto;
-import moaon.backend.article.repository.ArticleSearchResult;
+import moaon.backend.search.api.ArticleSearchResult;
+import moaon.backend.search.api.SearchWithLog;
+import moaon.backend.search.query.log.SearchLogCapture;
 
 public class FakeArticleSearchResult {
 
@@ -17,6 +19,17 @@ public class FakeArticleSearchResult {
         boolean hasNext = articles.size() == limit;
         ArticleCursor cursor = hasNext ? generateCursor(articles, sortType) : null;
         return new ArticleSearchResult(articles, totalCount, hasNext, cursor);
+    }
+
+    public static SearchWithLog createWithLog(
+            List<ArticleDto> articles,
+            long totalCount,
+            int limit,
+            ArticleSortType sortType
+    ) {
+        ArticleSearchResult result = create(articles, totalCount, limit, sortType);
+        SearchLogCapture logCapture = new SearchLogCapture(null, (int) totalCount, 0, List.of());
+        return new SearchWithLog(result, logCapture);
     }
 
     public static ArticleSearchResult empty() {

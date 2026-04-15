@@ -23,7 +23,7 @@ import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.Sector;
 import moaon.backend.article.dto.ArticleDto;
 import moaon.backend.article.dto.ArticleQueryCondition;
-import moaon.backend.article.repository.es.ArticleDocumentRepository;
+import moaon.backend.search.query.ArticleDocumentRepository;
 import moaon.backend.fixture.ArticleFixtureBuilder;
 import moaon.backend.fixture.FakeArticleSearchResult;
 import moaon.backend.fixture.Fixture;

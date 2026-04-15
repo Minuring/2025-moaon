@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>검색 케이스 상세</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>검색 케이스 상세</h2>
+        <a th:href="@{/admin/search-cases}" class="btn btn-outline-secondary">목록으로</a>
+    </div>
+
+    <!-- Case info card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-2">검색어</dt>
+                <dd class="col-sm-10" th:text="${case.query}"></dd>
+                <dt class="col-sm-2">점수</dt>
+                <dd class="col-sm-10" th:text="${case.badCaseScore}"></dd>
+                <dt class="col-sm-2">의심 플래그</dt>
+                <dd class="col-sm-10" th:text="${#strings.listJoin(case.suspectFlags, ', ')}"></dd>
+                <dt class="col-sm-2">결과수</dt>
+                <dd class="col-sm-10" th:text="${case.resultCount}"></dd>
+                <dt class="col-sm-2">응답시간</dt>
+                <dd class="col-sm-10"><span th:text="${case.queryTimeMs}"></span> ms</dd>
+                <dt class="col-sm-2">검색일시</dt>
+                <dd class="col-sm-10" th:text="${#temporals.format(case.searchedAt, 'yyyy-MM-dd HH:mm:ss')}"></dd>
+                <dt class="col-sm-2">상태</dt>
+                <dd class="col-sm-10" th:text="${case.status.name()}"></dd>
+                <dt class="col-sm-2">메모</dt>
+                <dd class="col-sm-10" th:text="${case.memo}"></dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Review form -->
+    <div class="card mb-4">
+        <div class="card-header">리뷰</div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">상태</label>
+                <select id="reviewStatus" class="form-select w-auto">
+                    <option th:each="s : ${reviewStatuses}"
+                            th:value="${s.name()}"
+                            th:text="${s.name()}"
+                            th:selected="${s == case.status}">
+                    </option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">메모</label>
+                <textarea id="reviewMemo" class="form-control" rows="3" th:text="${case.memo}"></textarea>
+            </div>
+            <button id="submitReview" class="btn btn-primary">저장</button>
+        </div>
+    </div>
+
+    <!-- Search results table -->
+    <h5>검색 결과 (상위 <span th:text="${case.hits.size()}"></span>건)</h5>
+    <table class="table table-sm">
+        <thead>
+        <tr>
+            <th>순위</th>
+            <th>문서ID</th>
+            <th>제목</th>
+            <th>점수</th>
+            <th>매칭 필드</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="hit : ${case.hits}">
+            <td th:text="${hit.rank}"></td>
+            <td th:text="${hit.docId}"></td>
+            <td th:text="${hit.title}"></td>
+            <td th:text="${#numbers.formatDecimal(hit.score, 1, 2)}"></td>
+            <td th:text="${#strings.listJoin(hit.matchedFields, ', ')}"></td>
+        </tr>
+        <tr th:if="${case.hits.isEmpty()}">
+            <td colspan="5" class="text-center text-muted">검색 결과 없음</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- CSRF disabled for /admin/api/** in SecurityConfig -->
+<script>
+document.getElementById('submitReview').addEventListener('click', function() {
+    const id = "[[${case.id}]]";
+    const status = document.getElementById('reviewStatus').value;
+    const memo = document.getElementById('reviewMemo').value;
+
+    fetch('/admin/api/search-cases/' + id + '/review', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: status, memo: memo })
+    })
+    .then(response => {
+        if (response.ok) {
+            alert('저장되었습니다.');
+            window.location.reload();
+        } else {
+            alert('저장 실패: ' + response.status);
+        }
+    })
+    .catch(err => alert('오류: ' + err));
+});
+</script>
+</body>
+</html>

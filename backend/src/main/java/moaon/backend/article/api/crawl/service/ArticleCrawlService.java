@@ -11,7 +11,7 @@ import moaon.backend.article.api.crawl.service.client.AiSummarizer;
 import moaon.backend.article.api.crawl.service.client.ContentFinder;
 import moaon.backend.article.api.crawl.service.client.ContentFinders;
 import moaon.backend.article.domain.ArticleContent;
-import moaon.backend.article.repository.db.ArticleContentRepository;
+import moaon.backend.article.repository.ArticleContentRepository;
 import moaon.backend.global.parser.URLParser;
 import moaon.backend.member.domain.Member;
 import org.springframework.stereotype.Service;

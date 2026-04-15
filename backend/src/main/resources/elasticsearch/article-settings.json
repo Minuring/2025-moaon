@@ -10,6 +10,18 @@
         "filter": [
           "nori_pos_with_stoptags",
           "nori_readingform",
+          "lowercase"
+        ]
+      },
+      "article_nori_search_analyzer": {
+        "type": "custom",
+        "tokenizer": "nori_tokenizer_with_dict",
+        "char_filter": [
+          "html_strip"
+        ],
+        "filter": [
+          "nori_pos_with_stoptags",
+          "nori_readingform",
           "lowercase",
           "article_common_synonym"
         ]
@@ -29,45 +41,13 @@
       "nori_pos_with_stoptags": {
         "type": "nori_part_of_speech",
         "stoptags": [
-          "EC",
-          "EF",
-          "EP",
-          "ETM",
-          "ETN",
-          "IC",
-          "JC",
-          "JKB",
-          "JKC",
-          "JKG",
-          "JKO",
-          "JKQ",
-          "JKS",
-          "JKV",
-          "JX",
-          "MAG",
-          "MAJ",
-          "MM",
-          "SP",
-          "SSC",
-          "SSO",
-          "SC",
-          "SE",
-          "XPN",
-          "XSA",
-          "XSN",
-          "XSV",
-          "UNA",
-          "NA",
-          "VSV",
-          "VX",
-          "VCP",
-          "SY",
-          "SF"
+          "EC", "EF", "EP", "ETM", "ETN", "IC", "JC", "JKB", "JKC", "JKG", "JKO", "JKQ", "JKS", "JKV", "JX", "MAG", "MAJ", "MM", "SP", "SSC", "SSO", "SC", "SE", "XPN", "XSA", "XSN", "XSV", "UNA", "NA", "VSV", "VX", "VCP", "SY", "SF"
         ]
       },
       "article_common_synonym": {
         "synonyms_path": "synonyms.txt",
-        "type": "synonym_graph"
+        "type": "synonym_graph",
+        "updateable": true
       }
     },
     "tokenizer": {

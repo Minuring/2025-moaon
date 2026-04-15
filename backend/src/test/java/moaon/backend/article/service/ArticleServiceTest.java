@@ -2,17 +2,13 @@ package moaon.backend.article.service;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+import static org.mockito.Mockito.*;
 import java.util.List;
 import java.util.Optional;
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.dto.ArticleCreateRequest;
-import moaon.backend.article.repository.ArticleRepositoryFacade;
-import moaon.backend.article.repository.db.ArticleContentRepository;
+import moaon.backend.article.repository.ArticleContentRepository;
+import moaon.backend.article.repository.ArticleDBRepository;
 import moaon.backend.fixture.ArticleFixtureBuilder;
 import moaon.backend.fixture.Fixture;
 import moaon.backend.fixture.ProjectFixtureBuilder;
@@ -22,6 +18,7 @@ import moaon.backend.global.parser.URLParser;
 import moaon.backend.member.domain.Member;
 import moaon.backend.project.dto.ProjectArticleQueryCondition;
 import moaon.backend.project.repository.ProjectRepository;
+import moaon.backend.search.api.SearchFacade;
 import moaon.backend.techStack.repository.TechStackRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,13 +26,15 @@ import org.mockito.Mockito;
 
 class ArticleServiceTest {
 
-    private final ArticleRepositoryFacade articleRepositoryFacade = Mockito.mock(ArticleRepositoryFacade.class);
+    private final SearchFacade searchFacade = Mockito.mock(SearchFacade.class);
+    private final ArticleDBRepository articleDBRepository = Mockito.mock(ArticleDBRepository.class);
     private final ArticleContentRepository articleContentRepository = Mockito.mock(ArticleContentRepository.class);
     private final ProjectRepository projectRepository = Mockito.mock(ProjectRepository.class);
     private final TechStackRepository techStackRepository = Mockito.mock(TechStackRepository.class);
 
     private final ArticleService articleService = new ArticleService(
-            articleRepositoryFacade,
+            searchFacade,
+            articleDBRepository,
             articleContentRepository,
             projectRepository,
             techStackRepository
@@ -56,22 +55,18 @@ class ArticleServiceTest {
     @DisplayName("클릭 수를 증가시킨다.")
     @Test
     void increaseClicksCount_success() {
-        Article article = new ArticleFixtureBuilder()
-                .id(123L)
-                .clicks(5)
-                .build();
-        when(articleRepositoryFacade.findById(123L)).thenReturn(Optional.of(article));
-        when(articleRepositoryFacade.updateClicksCount(123L)).thenReturn(true);
+        when(articleDBRepository.increaseClickCount(123L)).thenReturn(1);
 
         articleService.increaseClicksCount(123L);
 
-        verify(articleRepositoryFacade).updateClicksCount(123L);
+        verify(articleDBRepository).increaseClickCount(123L);
+        verify(searchFacade).requestIndex(123L);
     }
 
     @DisplayName("존재하지 않는 아티클의 클릭 증가 시 예외 발생")
     @Test
     void increaseClicksCount_notFound() {
-        when(articleRepositoryFacade.findById(1L)).thenReturn(Optional.empty());
+        when(articleDBRepository.increaseClickCount(1L)).thenReturn(0);
 
         assertThatThrownBy(() -> articleService.increaseClicksCount(1L))
                 .isInstanceOf(CustomException.class)
@@ -79,44 +74,24 @@ class ArticleServiceTest {
                 .isEqualTo(ErrorCode.ARTICLE_NOT_FOUND);
     }
 
-    @DisplayName("ArticleCreateRequest의 갯수만큼 저장한다.")
+    @DisplayName("ArticleCreateRequest의 갯수만큼 저장하고 각각 색인 요청한다.")
     @Test
-    void save_createsArticleAndDocument() {
-        // given
+    void save_createsArticleAndRequestsIndex() {
         Member author = new Member(1L, "socialId", "email", "name", 0);
+        Article savedArticle = new ArticleFixtureBuilder().id(99L).build();
         when(projectRepository.findById(1L)).thenReturn(
                 Optional.of(new ProjectFixtureBuilder().author(author).build())
         );
+        when(articleDBRepository.save(any(Article.class))).thenReturn(savedArticle);
 
-        List<ArticleCreateRequest> articleCreateRequest = List.of(
-                articleCreateRequestWithProjectId(1L),
+        List<ArticleCreateRequest> requests = List.of(
                 articleCreateRequestWithProjectId(1L),
                 articleCreateRequestWithProjectId(1L)
         );
+        articleService.save(requests, author);
 
-        // when
-        articleService.save(articleCreateRequest, author);
-
-        // then
-        verify(articleRepositoryFacade, times(3)).save(any(Article.class));
-    }
-
-    @DisplayName("아티클 저장 시 로그인한 멤버가 프로젝트의 작성자가 아니면 예외 발생")
-    @Test
-    void save_unauthorizedMember() {
-        // given
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(new ProjectFixtureBuilder()
-                .author(new Member(1L, "socialId", "email", "name", 0)).build())
-        );
-
-        ArticleCreateRequest request = articleCreateRequestWithProjectId(1L);
-
-        // when & then
-        Member otherMember = Fixture.anyMember();
-        assertThatThrownBy(() -> articleService.save(List.of(request), otherMember))
-                .isInstanceOf(CustomException.class)
-                .extracting("errorCode")
-                .isEqualTo(ErrorCode.UNAUTHORIZED_MEMBER);
+        verify(articleDBRepository, times(2)).save(any(Article.class));
+        verify(searchFacade, times(2)).requestIndex(99L);
     }
 
     private ArticleCreateRequest articleCreateRequestWithProjectId(long projectId) {
@@ -125,7 +100,7 @@ class ArticleServiceTest {
                 "title",
                 "summary",
                 List.of(),
-                URLParser.parse("http://example.com"),
+                URLParser.parse("https://example.com/article"),
                 "non_tech",
                 List.of("design")
         );

@@ -24,7 +24,7 @@ import moaon.backend.article.domain.Topic;
 import moaon.backend.article.dto.ArticleCreateRequest;
 import moaon.backend.article.dto.ArticleDto;
 import moaon.backend.article.dto.ArticleListResponse;
-import moaon.backend.article.repository.es.ArticleDocumentRepository;
+import moaon.backend.search.query.ArticleDocumentRepository;
 import moaon.backend.fixture.ArticleFixtureBuilder;
 import moaon.backend.fixture.FakeArticleSearchResult;
 import moaon.backend.fixture.Fixture;
@@ -220,7 +220,7 @@ public class ArticleApiTest extends BaseApiTest {
         );
 
         Mockito.when(articleDocumentRepository.search(Mockito.any()))
-                .thenReturn(FakeArticleSearchResult.create(
+                .thenReturn(FakeArticleSearchResult.createWithLog(
                         List.of(ArticleDto.from(articleClickRankFirst), ArticleDto.from(articleClickRankSecond)),
                         3, 2, ArticleSortType.CLICKS));
 

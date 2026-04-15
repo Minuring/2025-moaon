@@ -2,7 +2,7 @@ package moaon.backend.article.dto;
 
 import java.util.List;
 import moaon.backend.article.domain.ArticleCursor;
-import moaon.backend.article.repository.ArticleSearchResult;
+import moaon.backend.search.api.ArticleSearchResult;
 
 public record ArticleListResponse(
         List<ArticleDto> contents,

@@ -6,7 +6,7 @@ import java.util.Map;
 
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.Topic;
-import moaon.backend.article.repository.es.ArticleDocument;
+import moaon.backend.search.query.ArticleDocument;
 import moaon.backend.techStack.domain.TechStack;
 
 public record ArticleDto(

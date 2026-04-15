@@ -701,7 +701,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ curl 'https://api.moaon.site/projects' -i -X POST \
     -H 'Content-Type: application/json' \
-    --cookie 'token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxMyIsImV4cCI6MTc3Mzc0NjMxMX0.nJuxNgPmAICoGinrxVnaM2YLSfs9RdCvFP807CjhhNDdfiWDqHYpUA7D0jzDK8U4lK0PCh8lcN6UuMXbELgr2w' \
+    --cookie 'token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxNCIsImV4cCI6MTc3NjA2ODAzOX0.vGP1MfRHZ0o3LWDQO0ikdHptSiu-WibG3LBsuCKl9fb7Jqr5NNX_i79rMzkRCm-AKMXp0KGCxdw1FNrzWevrsA' \
     -d '{
   "title" : "모아온",
   "summary" : "프로젝트를 모아모아, 모아온",
@@ -723,7 +723,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 Content-Type: application/json
 Host: api.moaon.site
 Content-Length: 706
-Cookie: token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxMyIsImV4cCI6MTc3Mzc0NjMxMX0.nJuxNgPmAICoGinrxVnaM2YLSfs9RdCvFP807CjhhNDdfiWDqHYpUA7D0jzDK8U4lK0PCh8lcN6UuMXbELgr2w
+Cookie: token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxNCIsImV4cCI6MTc3NjA2ODAzOX0.vGP1MfRHZ0o3LWDQO0ikdHptSiu-WibG3LBsuCKl9fb7Jqr5NNX_i79rMzkRCm-AKMXp0KGCxdw1FNrzWevrsA
 
 {
   "title" : "모아온",
@@ -817,7 +817,7 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 16 Mar 2026 11:18:31 GMT
+Date: Sun, 12 Apr 2026 08:13:59 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive
 Content-Length: 15
@@ -914,7 +914,7 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 16 Mar 2026 11:18:31 GMT
+Date: Sun, 12 Apr 2026 08:13:59 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive
 Content-Length: 579
@@ -1145,17 +1145,17 @@ Host: api.moaon.site</code></pre>
 Vary: Origin
 Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
-Set-Cookie: viewed_projects=%7B%223%22%3A1773659911%7D; Path=/projects; Max-Age=27689; Expires=Mon, 16 Mar 2026 19:00:00 GMT; Secure; HttpOnly; SameSite=None
+Set-Cookie: viewed_projects=%7B%223%22%3A1775981639%7D; Path=/projects; Max-Age=38761; Expires=Sun, 12 Apr 2026 19:00:00 GMT; Secure; HttpOnly; SameSite=None
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 16 Mar 2026 11:18:31 GMT
+Date: Sun, 12 Apr 2026 08:13:59 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive
 Content-Length: 554
 
 {
   "id" : 3,
-  "authorId" : 5,
+  "authorId" : 6,
   "title" : "테스트 프로젝트 제목237",
   "summary" : "테스트 프로젝트 요약238",
   "description" : "테스트 프로젝트 상세 설명239",
@@ -1165,7 +1165,7 @@ Content-Length: 554
   "isLoved" : false,
   "loves" : 0,
   "views" : 1,
-  "createdAt" : "2026-03-16T20:18:31.563375",
+  "createdAt" : "2026-04-12T17:13:59.622522",
   "githubUrl" : "https://github.com/test-repo",
   "productionUrl" : "https://test-product.com"
 }</code></pre>
@@ -1327,23 +1327,14 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 16 Mar 2026 11:18:31 GMT
+Date: Sun, 12 Apr 2026 08:13:59 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive
-Content-Length: 1257
+Content-Length: 1671
 
 {
   "counts" : [ {
     "sector" : "nonTech",
-    "count" : 0
-  }, {
-    "sector" : "ios",
-    "count" : 0
-  }, {
-    "sector" : "fe",
-    "count" : 1
-  }, {
-    "sector" : "android",
     "count" : 0
   }, {
     "sector" : "be",
@@ -1352,39 +1343,60 @@ Content-Length: 1257
     "sector" : "infra",
     "count" : 0
   }, {
+    "sector" : "fe",
+    "count" : 1
+  }, {
+    "sector" : "ios",
+    "count" : 0
+  }, {
+    "sector" : "android",
+    "count" : 0
+  }, {
     "sector" : "all",
     "count" : 5
   } ],
   "articles" : [ {
     "id" : 1,
+    "projectId" : 1,
+    "projectTitle" : "테스트 프로젝트 제목154",
+    "clicks" : 0,
     "title" : "모아온",
     "summary" : "테스트 아티클 요약163",
-    "clicks" : 0,
     "techStacks" : [ "testTechStack173" ],
     "url" : "https://test-product.com",
     "sector" : "be",
     "topics" : [ "etc" ],
-    "createdAt" : "2026-03-16T20:18:31.392586"
+    "createdAt" : "2026-04-12T17:13:59.478766",
+    "highlightTitle" : null,
+    "highlightSummary" : null
   }, {
     "id" : 2,
+    "projectId" : 1,
+    "projectTitle" : "테스트 프로젝트 제목154",
+    "clicks" : 0,
     "title" : "테스트 아티클 제목174",
     "summary" : "모아온",
-    "clicks" : 0,
     "techStacks" : [ "testTechStack185" ],
     "url" : "https://test-product.com",
     "sector" : "be",
     "topics" : [ "etc" ],
-    "createdAt" : "2026-03-16T20:18:31.425919"
+    "createdAt" : "2026-04-12T17:13:59.495714",
+    "highlightTitle" : null,
+    "highlightSummary" : null
   }, {
     "id" : 3,
+    "projectId" : 1,
+    "projectTitle" : "테스트 프로젝트 제목154",
+    "clicks" : 0,
     "title" : "테스트 아티클 제목186",
     "summary" : "테스트 아티클 요약187",
-    "clicks" : 0,
     "techStacks" : [ "testTechStack197" ],
     "url" : "https://test-product.com",
     "sector" : "be",
     "topics" : [ "etc" ],
-    "createdAt" : "2026-03-16T20:18:31.444361"
+    "createdAt" : "2026-04-12T17:13:59.511718",
+    "highlightTitle" : null,
+    "highlightSummary" : null
   } ]
 }</code></pre>
 </div>
@@ -1552,7 +1564,7 @@ Content-Length: 1257
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ curl 'https://api.moaon.site/articles' -i -X POST \
     -H 'Content-Type: application/json' \
-    --cookie 'token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzczNzQ2MzA3fQ.O_j20D8wlFxoWTLK8fAkqTrMI4ydsJPB5AwjNxRZmFTCy8iQemAP6krikxe-fsQSVaSLzlK4BVwBUMYMRBtQwQ' \
+    --cookie 'token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzc2MDY4MDM3fQ.AaBN33yJzt0d1QNi_Jvc3pZbr3GayYTS8OO8XX3r773kpfBu7oz1kIqgUXSodNdN_hnHXl2o6CznbEClXoVG5g' \
     -d '[ {
   "projectId" : 3,
   "title" : "fork-ts-checker-webpack-plugin",
@@ -1573,7 +1585,7 @@ Content-Length: 1257
 Content-Type: application/json
 Host: api.moaon.site
 Content-Length: 283
-Cookie: token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzczNzQ2MzA3fQ.O_j20D8wlFxoWTLK8fAkqTrMI4ydsJPB5AwjNxRZmFTCy8iQemAP6krikxe-fsQSVaSLzlK4BVwBUMYMRBtQwQ
+Cookie: token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzc2MDY4MDM3fQ.AaBN33yJzt0d1QNi_Jvc3pZbr3GayYTS8OO8XX3r773kpfBu7oz1kIqgUXSodNdN_hnHXl2o6CznbEClXoVG5g
 
 [ {
   "projectId" : 3,
@@ -1658,7 +1670,7 @@ Cookie: token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzczNzQ2MzA3fQ.O_j20D
 Vary: Origin
 Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
-Date: Mon, 16 Mar 2026 11:18:27 GMT
+Date: Sun, 12 Apr 2026 08:13:57 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive</code></pre>
 </div>
@@ -1714,8 +1726,8 @@ Host: api.moaon.site</code></pre>
 Vary: Origin
 Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
-Set-Cookie: clicked_articles=%7B%2210%22%3A1773659907%7D; Path=/articles; Max-Age=27693; Expires=Mon, 16 Mar 2026 19:00:00 GMT; Secure; HttpOnly; SameSite=None
-Date: Mon, 16 Mar 2026 11:18:27 GMT
+Set-Cookie: clicked_articles=%7B%2210%22%3A1775981637%7D; Path=/articles; Max-Age=38763; Expires=Sun, 12 Apr 2026 19:00:00 GMT; Secure; HttpOnly; SameSite=None
+Date: Sun, 12 Apr 2026 08:13:57 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive</code></pre>
 </div>
@@ -1771,10 +1783,10 @@ Vary: Access-Control-Request-Method
 Vary: Access-Control-Request-Headers
 Content-Type: application/json
 Transfer-Encoding: chunked
-Date: Mon, 16 Mar 2026 11:18:27 GMT
+Date: Sun, 12 Apr 2026 08:13:57 GMT
 Keep-Alive: timeout=60
 Connection: keep-alive
-Content-Length: 828
+Content-Length: 947
 
 {
   "contents" : [ {
@@ -1788,7 +1800,9 @@ Content-Length: 828
     "url" : "https://test-product.com",
     "sector" : "be",
     "topics" : [ "db" ],
-    "createdAt" : "2026-03-16T20:18:26.731781"
+    "createdAt" : "2026-04-12T17:13:56.753326",
+    "highlightTitle" : null,
+    "highlightSummary" : null
   }, {
     "id" : 8,
     "projectId" : 1,
@@ -1800,7 +1814,9 @@ Content-Length: 828
     "url" : "https://test-product.com",
     "sector" : "be",
     "topics" : [ "db" ],
-    "createdAt" : "2026-03-16T20:18:26.709276"
+    "createdAt" : "2026-04-12T17:13:56.73223",
+    "highlightTitle" : null,
+    "highlightSummary" : null
   } ],
   "totalCount" : 3,
   "hasNext" : true,
@@ -1951,6 +1967,18 @@ Content-Length: 828
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>contents[].createdAt</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>String</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">생성일시</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>contents[].highlightTitle</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Null</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">제목 하이라이트</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>contents[].highlightSummary</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Null</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">요약 하이라이트</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">X</p></td>
 </tr>
 <tr>

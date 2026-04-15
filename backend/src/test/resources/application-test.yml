@@ -48,3 +48,8 @@ gpt:
   api-key: testKey
   connect-timeout-millis: 1000
   read-timeout-millis: 5000
+
+dictionary:
+  synonym-path: /tmp/test-synonyms.txt
+  nori-path: /tmp/test-nori.txt
+  flag-path: /tmp/test-reindex.flag
