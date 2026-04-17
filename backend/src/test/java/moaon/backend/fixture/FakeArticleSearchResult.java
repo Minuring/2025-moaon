@@ -4,9 +4,9 @@ import java.util.List;
 import moaon.backend.article.domain.ArticleCursor;
 import moaon.backend.article.domain.ArticleSortType;
 import moaon.backend.article.dto.ArticleDto;
-import moaon.backend.search.api.ArticleSearchResult;
-import moaon.backend.search.api.SearchWithLog;
-import moaon.backend.search.query.log.SearchLogCapture;
+import moaon.backend.article.repository.ArticleSearchResult;
+import moaon.backend.search.query.SearchWithLog;
+import moaon.backend.search.log.domain.SearchLogCapture;
 
 public class FakeArticleSearchResult {
 

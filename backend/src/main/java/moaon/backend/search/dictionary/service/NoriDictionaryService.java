@@ -1,67 +1,70 @@
 package moaon.backend.search.dictionary.service;
 
-import java.util.ArrayList;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import moaon.backend.search.dictionary.model.NoriEntry;
-import moaon.backend.search.dictionary.repository.NoriFileRepository;
-import moaon.backend.search.indexing.ReindexFlagService;
+import lombok.extern.slf4j.Slf4j;
+import moaon.backend.search.dictionary.domain.NoriDictionaryEntry;
+import moaon.backend.search.dictionary.dto.ReloadResponse;
+import moaon.backend.search.dictionary.dto.NoriEntry;
+import moaon.backend.search.dictionary.repository.NoriDictionaryRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
+@Slf4j
 public class NoriDictionaryService {
 
-    private final NoriFileRepository noriFileRepository;
-    private final ReindexFlagService reindexFlagService;
+    private static final String ARTICLE_INDEX = "articles";
+
+    private final NoriDictionaryRepository noriDictionaryRepository;
+    private final ElasticsearchClient elasticsearchClient;
 
     public List<NoriEntry> findAll() {
-        return noriFileRepository.findAll();
+        return noriDictionaryRepository.findAll().stream()
+                .map(NoriEntry::from)
+                .toList();
     }
 
+    @Transactional
     public NoriEntry add(String surface, List<String> segments) {
         validateSurface(surface);
-        List<NoriEntry> all = noriFileRepository.findAll();
-        int newId = all.size() + 1;
-        String raw = buildRaw(surface, segments);
-        NoriEntry entry = new NoriEntry(newId, surface, segments, raw);
-        all.add(entry);
-        noriFileRepository.saveAll(all);
-        reindexFlagService.markDirty();
-        return entry;
+        NoriDictionaryEntry entry = noriDictionaryRepository.save(new NoriDictionaryEntry(surface, segments));
+        return NoriEntry.from(entry);
     }
 
-    public NoriEntry update(int id, String surface, List<String> segments) {
+    @Transactional
+    public NoriEntry update(Long id, String surface, List<String> segments) {
         validateSurface(surface);
-        List<NoriEntry> all = noriFileRepository.findAll();
-        if (id < 1 || id > all.size()) {
-            throw new IllegalArgumentException("존재하지 않는 nori id: " + id);
-        }
-        String raw = buildRaw(surface, segments);
-        NoriEntry updated = new NoriEntry(id, surface, segments, raw);
-        all.set(id - 1, updated);
-        noriFileRepository.saveAll(all);
-        reindexFlagService.markDirty();
-        return updated;
+        NoriDictionaryEntry entry = noriDictionaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 nori id: " + id));
+        entry.update(surface, segments);
+        return NoriEntry.from(entry);
     }
 
-    public void delete(int id) {
-        List<NoriEntry> all = noriFileRepository.findAll();
-        if (id < 1 || id > all.size()) {
+    @Transactional
+    public void delete(Long id) {
+        if (!noriDictionaryRepository.existsById(id)) {
             throw new IllegalArgumentException("존재하지 않는 nori id: " + id);
         }
-        all.remove(id - 1);
-        List<NoriEntry> renumbered = new ArrayList<>();
-        for (int i = 0; i < all.size(); i++) {
-            NoriEntry e = all.get(i);
-            renumbered.add(new NoriEntry(i + 1, e.getSurface(), e.getSegments(), e.getRaw()));
-        }
-        noriFileRepository.saveAll(renumbered);
-        reindexFlagService.markDirty();
+        noriDictionaryRepository.deleteById(id);
     }
 
-    private String buildRaw(String surface, List<String> segments) {
-        return segments.isEmpty() ? surface : surface + " " + String.join(" ", segments);
+    public ReloadResponse reloadIndex() {
+        try {
+            elasticsearchClient.indices().close(r -> r.index(ARTICLE_INDEX));
+            log.info("ES 인덱스 close: {}", ARTICLE_INDEX);
+
+            elasticsearchClient.indices().open(r -> r.index(ARTICLE_INDEX));
+            log.info("ES 인덱스 open: {}", ARTICLE_INDEX);
+
+            return new ReloadResponse(true, "Nori 사전 반영 완료 (인덱스 재시작됨)");
+        } catch (Exception e) {
+            log.error("Nori 인덱스 reload 실패", e);
+            return new ReloadResponse(false, "Nori 인덱스 reload 실패: " + e.getMessage());
+        }
     }
 
     private void validateSurface(String surface) {

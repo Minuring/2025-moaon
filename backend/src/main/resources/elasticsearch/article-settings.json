@@ -45,7 +45,7 @@
         ]
       },
       "article_common_synonym": {
-        "synonyms_path": "synonyms.txt",
+        "synonyms_set": "moaon_synonyms",
         "type": "synonym_graph",
         "updateable": true
       }

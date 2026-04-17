@@ -86,7 +86,3 @@ reindex:
   batch-size: ${REINDEX_BATCH_SIZE:1000}
   cron: ${REINDEX_CRON:0 0 3 * * *}
 
-dictionary:
-  synonym-path: ${SYNONYM_FILE_PATH:/usr/share/elasticsearch/config/synonyms.txt}
-  nori-path: ${NORI_FILE_PATH:/usr/share/elasticsearch/config/dictionary.txt}
-  flag-path: ${REINDEX_FLAG_PATH:/tmp/reindex-required.flag}

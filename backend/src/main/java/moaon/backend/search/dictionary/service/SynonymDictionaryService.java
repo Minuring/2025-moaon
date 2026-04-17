@@ -1,56 +1,89 @@
 package moaon.backend.search.dictionary.service;
 
-import java.util.ArrayList;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.indices.ReloadSearchAnalyzersResponse;
+import co.elastic.clients.elasticsearch.synonyms.SynonymRule;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import moaon.backend.search.dictionary.model.SynonymEntry;
-import moaon.backend.search.dictionary.repository.SynonymFileRepository;
+import lombok.extern.slf4j.Slf4j;
+import moaon.backend.search.dictionary.domain.SynonymDictionaryEntry;
+import moaon.backend.search.dictionary.dto.ReloadResponse;
+import moaon.backend.search.dictionary.dto.SynonymEntry;
+import moaon.backend.search.dictionary.repository.SynonymDictionaryRepository;
+import moaon.backend.search.query.ArticleDocument;
+import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
+@Slf4j
 public class SynonymDictionaryService {
 
-    private final SynonymFileRepository synonymFileRepository;
+    private static final String ARTICLE_INDEX =
+            ArticleDocument.class.getAnnotation(Document.class).aliases()[0].alias();
+    private static final String SYNONYM_SET_ID = "moaon_synonyms";
+
+    private final SynonymDictionaryRepository synonymDictionaryRepository;
+    private final ElasticsearchClient elasticsearchClient;
 
     public List<SynonymEntry> findAll() {
-        return synonymFileRepository.findAll();
+        return synonymDictionaryRepository.findAll().stream()
+                .map(SynonymEntry::from)
+                .toList();
     }
 
+    @Transactional
     public SynonymEntry add(List<String> terms) {
         validateTerms(terms);
-        List<SynonymEntry> all = synonymFileRepository.findAll();
-        int newId = all.size() + 1;
-        SynonymEntry entry = new SynonymEntry(newId, terms, String.join(", ", terms));
-        all.add(entry);
-        synonymFileRepository.saveAll(all);
-        return entry;
+        SynonymDictionaryEntry entry = synonymDictionaryRepository.save(new SynonymDictionaryEntry(terms));
+        return SynonymEntry.from(entry);
     }
 
-    public SynonymEntry update(int id, List<String> terms) {
+    @Transactional
+    public SynonymEntry update(Long id, List<String> terms) {
         validateTerms(terms);
-        List<SynonymEntry> all = synonymFileRepository.findAll();
-        if (id < 1 || id > all.size()) {
-            throw new IllegalArgumentException("존재하지 않는 synonym id: " + id);
-        }
-        SynonymEntry updated = new SynonymEntry(id, terms, String.join(", ", terms));
-        all.set(id - 1, updated);
-        synonymFileRepository.saveAll(all);
-        return updated;
+        SynonymDictionaryEntry entry = synonymDictionaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 synonym id: " + id));
+        entry.update(terms);
+        return SynonymEntry.from(entry);
     }
 
-    public void delete(int id) {
-        List<SynonymEntry> all = synonymFileRepository.findAll();
-        if (id < 1 || id > all.size()) {
+    @Transactional
+    public void delete(Long id) {
+        if (!synonymDictionaryRepository.existsById(id)) {
             throw new IllegalArgumentException("존재하지 않는 synonym id: " + id);
         }
-        all.remove(id - 1);
-        List<SynonymEntry> renumbered = new ArrayList<>();
-        for (int i = 0; i < all.size(); i++) {
-            SynonymEntry e = all.get(i);
-            renumbered.add(new SynonymEntry(i + 1, e.getTerms(), e.getRaw()));
+        synonymDictionaryRepository.deleteById(id);
+    }
+
+    public ReloadResponse reloadSynonyms() {
+        try {
+            List<SynonymRule> rules = synonymDictionaryRepository.findAll().stream()
+                    .map(entry -> SynonymRule.of(r -> r.synonyms(entry.getRawExpression())))
+                    .toList();
+
+            elasticsearchClient.synonyms().putSynonym(r -> r
+                    .id(SYNONYM_SET_ID)
+                    .synonymsSet(rules)
+            );
+            log.info("Synonym set '{}' 업데이트 완료 ({} 개)", SYNONYM_SET_ID, rules.size());
+
+            ReloadSearchAnalyzersResponse response =
+                    elasticsearchClient.indices().reloadSearchAnalyzers(r -> r.index(ARTICLE_INDEX));
+
+            String detail = response.reloadDetails().stream()
+                    .map(d -> d.index() + " → " + d.reloadedAnalyzers())
+                    .collect(Collectors.joining(", "));
+
+            log.info("Synonym reload 성공: {}", detail);
+            return new ReloadResponse(true, "ES synonym reload 완료: " + detail);
+        } catch (Exception e) {
+            log.error("Synonym reload 실패", e);
+            return new ReloadResponse(false, "synonym reload 실패: " + e.getMessage());
         }
-        synonymFileRepository.saveAll(renumbered);
     }
 
     private void validateTerms(List<String> terms) {

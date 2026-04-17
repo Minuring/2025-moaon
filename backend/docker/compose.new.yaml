@@ -82,5 +82,3 @@ services:
       retries: 5
     volumes:
       - ./volumes/es:/usr/share/elasticsearch/data
-      - ./config/synonyms.txt:/usr/share/elasticsearch/config/synonyms.txt
-      - ./config/dictionary.txt:/usr/share/elasticsearch/config/dictionary.txt
