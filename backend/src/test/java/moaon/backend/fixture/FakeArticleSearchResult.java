@@ -6,7 +6,6 @@ import moaon.backend.article.domain.ArticleSortType;
 import moaon.backend.article.dto.ArticleDto;
 import moaon.backend.article.repository.ArticleSearchResult;
 import moaon.backend.search.query.SearchWithLog;
-import moaon.backend.search.log.domain.SearchLogCapture;
 
 public class FakeArticleSearchResult {
 
@@ -28,8 +27,7 @@ public class FakeArticleSearchResult {
             ArticleSortType sortType
     ) {
         ArticleSearchResult result = create(articles, totalCount, limit, sortType);
-        SearchLogCapture logCapture = new SearchLogCapture(null, (int) totalCount, 0, List.of());
-        return new SearchWithLog(result, logCapture);
+        return new SearchWithLog(result, List.of(), 0);
     }
 
     public static ArticleSearchResult empty() {

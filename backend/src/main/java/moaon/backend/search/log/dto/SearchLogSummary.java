@@ -1,9 +1,9 @@
 package moaon.backend.search.log.dto;
 
+import moaon.backend.search.log.domain.FieldMatchStats;
 import moaon.backend.search.log.domain.SearchLogDocument;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 public record SearchLogSummary(
         String id,
@@ -11,8 +11,9 @@ public record SearchLogSummary(
         LocalDateTime searchedAt,
         int resultCount,
         int queryTimeMs,
-        int badCaseScore,
-        List<String> suspectFlags
+        boolean hasCursor,
+        Integer synonymMatchCount,
+        FieldMatchStats fieldMatchStats
 ) {
     public static SearchLogSummary from(SearchLogDocument doc) {
         return new SearchLogSummary(
@@ -21,8 +22,9 @@ public record SearchLogSummary(
                 doc.getSearchedAt(),
                 doc.getResultCount(),
                 doc.getQueryTimeMs(),
-                doc.getBadCaseScore(),
-                doc.getSuspectFlags() != null ? doc.getSuspectFlags() : List.of()
+                doc.isHasCursor(),
+                doc.getSynonymMatchCount(),
+                doc.getFieldMatchStats()
         );
     }
 }

@@ -17,16 +17,35 @@
             <dl class="row">
                 <dt class="col-sm-2">검색어</dt>
                 <dd class="col-sm-10" th:text="${log.query}"></dd>
-                <dt class="col-sm-2">점수</dt>
-                <dd class="col-sm-10" th:text="${log.badCaseScore}"></dd>
-                <dt class="col-sm-2">의심 플래그</dt>
-                <dd class="col-sm-10" th:text="${#strings.listJoin(log.suspectFlags, ', ')}"></dd>
                 <dt class="col-sm-2">결과수</dt>
                 <dd class="col-sm-10" th:text="${log.resultCount}"></dd>
+                <dt class="col-sm-2">2페이지 이상</dt>
+                <dd class="col-sm-10" th:text="${log.hasCursor} ? '예' : '아니오'"></dd>
+                <dt class="col-sm-2">동의어 매칭</dt>
+                <dd class="col-sm-10">
+                    <span th:if="${log.synonymMatchCount != null}" th:text="${log.synonymMatchCount} + '건'"></span>
+                    <span th:if="${log.synonymMatchCount == null}" class="text-muted">-</span>
+                </dd>
                 <dt class="col-sm-2">응답시간</dt>
                 <dd class="col-sm-10"><span th:text="${log.queryTimeMs}"></span> ms</dd>
                 <dt class="col-sm-2">검색일시</dt>
                 <dd class="col-sm-10" th:text="${#temporals.format(log.searchedAt, 'yyyy-MM-dd HH:mm:ss')}"></dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card mb-4" th:if="${log.fieldMatchStats != null}">
+        <div class="card-header">필드 매칭 분포</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-2">집계 대상</dt>
+                <dd class="col-sm-10" th:text="${log.fieldMatchStats.hitCount} + '건'"></dd>
+                <dt class="col-sm-2">title 매칭</dt>
+                <dd class="col-sm-10" th:text="${log.fieldMatchStats.titleCount} + '건'"></dd>
+                <dt class="col-sm-2">summary 매칭</dt>
+                <dd class="col-sm-10" th:text="${log.fieldMatchStats.summaryCount} + '건'"></dd>
+                <dt class="col-sm-2">content only</dt>
+                <dd class="col-sm-10" th:text="${log.fieldMatchStats.contentCount} + '건'"></dd>
             </dl>
         </div>
     </div>

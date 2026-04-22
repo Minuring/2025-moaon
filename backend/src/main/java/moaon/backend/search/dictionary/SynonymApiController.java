@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import moaon.backend.search.dictionary.dto.ReloadResponse;
 import moaon.backend.search.dictionary.dto.SynonymRequest;
 import moaon.backend.search.dictionary.dto.SynonymEntry;
+import moaon.backend.search.dictionary.service.DuplicateSynonymEntryException;
 import moaon.backend.search.dictionary.service.SynonymDictionaryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -43,4 +44,12 @@ public class SynonymApiController {
     public ReloadResponse reload() {
         return synonymDictionaryService.reloadSynonyms();
     }
+
+    @ExceptionHandler(DuplicateSynonymEntryException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public DuplicateConflictResponse handleDuplicate(DuplicateSynonymEntryException e) {
+        return new DuplicateConflictResponse(e.getConflictEntry(), e.getDuplicateTerm());
+    }
+
+    record DuplicateConflictResponse(SynonymEntry conflictEntry, String duplicateTerm) {}
 }

@@ -38,6 +38,7 @@ public class SynonymDictionaryService {
     @Transactional
     public SynonymEntry add(List<String> terms) {
         validateTerms(terms);
+        checkDuplicate(terms, null);
         SynonymDictionaryEntry entry = synonymDictionaryRepository.save(new SynonymDictionaryEntry(terms));
         return SynonymEntry.from(entry);
     }
@@ -45,6 +46,7 @@ public class SynonymDictionaryService {
     @Transactional
     public SynonymEntry update(Long id, List<String> terms) {
         validateTerms(terms);
+        checkDuplicate(terms, id);
         SynonymDictionaryEntry entry = synonymDictionaryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 synonym id: " + id));
         entry.update(terms);
@@ -84,6 +86,20 @@ public class SynonymDictionaryService {
             log.error("Synonym reload 실패", e);
             return new ReloadResponse(false, "synonym reload 실패: " + e.getMessage());
         }
+    }
+
+    private void checkDuplicate(List<String> newTerms, Long excludeId) {
+        List<String> normalizedNew = newTerms.stream().map(t -> t.trim().toLowerCase()).toList();
+        synonymDictionaryRepository.findAll().stream()
+                .filter(e -> excludeId == null || !e.getId().equals(excludeId))
+                .forEach(existing -> {
+                    SynonymEntry existingEntry = SynonymEntry.from(existing);
+                    existing.terms().stream()
+                            .map(t -> t.trim().toLowerCase())
+                            .filter(normalizedNew::contains)
+                            .findFirst()
+                            .ifPresent(dup -> { throw new DuplicateSynonymEntryException(existingEntry, dup); });
+                });
     }
 
     private void validateTerms(List<String> terms) {

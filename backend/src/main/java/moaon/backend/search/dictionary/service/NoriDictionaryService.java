@@ -31,6 +31,7 @@ public class NoriDictionaryService {
     @Transactional
     public NoriEntry add(String surface, List<String> segments) {
         validateSurface(surface);
+        checkDuplicate(surface, null);
         NoriDictionaryEntry entry = noriDictionaryRepository.save(new NoriDictionaryEntry(surface, segments));
         return NoriEntry.from(entry);
     }
@@ -38,6 +39,7 @@ public class NoriDictionaryService {
     @Transactional
     public NoriEntry update(Long id, String surface, List<String> segments) {
         validateSurface(surface);
+        checkDuplicate(surface, id);
         NoriDictionaryEntry entry = noriDictionaryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 nori id: " + id));
         entry.update(surface, segments);
@@ -65,6 +67,20 @@ public class NoriDictionaryService {
             log.error("Nori 인덱스 reload 실패", e);
             return new ReloadResponse(false, "Nori 인덱스 reload 실패: " + e.getMessage());
         }
+    }
+
+    private void checkDuplicate(String surface, Long excludeId) {
+        String normalizedNew = normalize(surface);
+        noriDictionaryRepository.findAll().stream()
+                .filter(e -> excludeId == null || !e.getId().equals(excludeId))
+                .filter(e -> e.getSurface().equalsIgnoreCase(surface)
+                        || normalize(e.getSurface()).equals(normalizedNew))
+                .findFirst()
+                .ifPresent(e -> { throw new DuplicateNoriEntryException(NoriEntry.from(e)); });
+    }
+
+    private static String normalize(String surface) {
+        return surface.replaceAll("\\s+", "").toLowerCase();
     }
 
     private void validateSurface(String surface) {

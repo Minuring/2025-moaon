@@ -12,7 +12,6 @@ import moaon.backend.global.parser.LongParser;
 import moaon.backend.global.parser.Parser;
 import moaon.backend.project.domain.Project;
 import moaon.backend.search.log.domain.SearchHitLog;
-import moaon.backend.search.log.domain.SearchLogCapture;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.RefreshPolicy;
@@ -40,28 +39,14 @@ public class ArticleDocumentRepository {
 
         ArticleSearchResult articleSearchResult = wrapSearchHits(condition, searchHits);
 
-        String query = condition.search() != null ? condition.search().value() : null;
-
-        List<SearchHitLog> hitLogs;
-        if (query == null || query.isBlank()) {
-            hitLogs = List.of();
-        } else {
-            hitLogs = new ArrayList<>();
-            int rank = 1;
-            for (SearchHit<ArticleDocument> hit : searchHits) {
-                hitLogs.add(SearchHitLog.of(rank++, hit.getContent().getId(), hit.getContent().getTitle(),
-                        hit.getScore(), hit.getHighlightFields()));
-            }
+        List<SearchHitLog> hitLogs = new ArrayList<>();
+        int rank = 1;
+        for (SearchHit<ArticleDocument> hit : searchHits) {
+            hitLogs.add(SearchHitLog.of(rank++, hit.getContent().getId(), hit.getContent().getTitle(),
+                    hit.getScore(), hit.getHighlightFields()));
         }
 
-        SearchLogCapture searchLogCapture = new SearchLogCapture(
-                query,
-                (int) Math.min(searchHits.getTotalHits(), Integer.MAX_VALUE),
-                queryTimeMs,
-                hitLogs
-        );
-
-        return new SearchWithLog(articleSearchResult, searchLogCapture);
+        return new SearchWithLog(articleSearchResult, hitLogs, queryTimeMs);
     }
 
     public ArticleSearchResult searchInProject(Project project, ArticleQueryCondition condition) {

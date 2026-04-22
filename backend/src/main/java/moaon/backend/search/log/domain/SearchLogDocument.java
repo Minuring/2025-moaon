@@ -33,25 +33,30 @@ public class SearchLogDocument {
     @Field(type = FieldType.Integer)
     private int queryTimeMs;
 
-    @Field(type = FieldType.Integer)
-    private int badCaseScore;
+    @Field(type = FieldType.Boolean)
+    private boolean hasCursor;
 
-    @Field(type = FieldType.Keyword)
-    private List<String> suspectFlags;
+    @Field(type = FieldType.Integer)
+    private Integer synonymMatchCount;
+
+    @Field(type = FieldType.Object)
+    private FieldMatchStats fieldMatchStats;
 
     @Field(type = FieldType.Object)
     private List<SearchedDoc> searchedDocs;
 
     public SearchLogDocument(String query, int resultCount, int queryTimeMs,
-                              int badCaseScore, List<String> suspectFlags,
+                              boolean hasCursor, Integer synonymMatchCount,
+                              FieldMatchStats fieldMatchStats,
                               List<SearchedDoc> searchedDocs) {
         this.id = UUID.randomUUID().toString();
         this.query = query;
         this.searchedAt = LocalDateTime.now();
         this.resultCount = resultCount;
         this.queryTimeMs = queryTimeMs;
-        this.badCaseScore = badCaseScore;
-        this.suspectFlags = suspectFlags;
+        this.hasCursor = hasCursor;
+        this.synonymMatchCount = synonymMatchCount;
+        this.fieldMatchStats = fieldMatchStats;
         this.searchedDocs = searchedDocs;
     }
 

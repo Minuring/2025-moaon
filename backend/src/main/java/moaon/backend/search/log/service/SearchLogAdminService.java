@@ -20,10 +20,7 @@ public class SearchLogAdminService {
     private final SearchLogRepository searchLogRepository;
 
     public Page<SearchLogSummary> list(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(
-                Sort.Order.desc("badCaseScore"),
-                Sort.Order.desc("searchedAt")
-        ));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("searchedAt")));
         return searchLogRepository.findAll(pageable).map(SearchLogSummary::from);
     }
 

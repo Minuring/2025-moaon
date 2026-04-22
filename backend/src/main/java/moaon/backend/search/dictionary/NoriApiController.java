@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import moaon.backend.search.dictionary.dto.NoriRequest;
 import moaon.backend.search.dictionary.dto.ReloadResponse;
 import moaon.backend.search.dictionary.dto.NoriEntry;
+import moaon.backend.search.dictionary.service.DuplicateNoriEntryException;
 import moaon.backend.search.dictionary.service.NoriDictionaryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -42,5 +43,11 @@ public class NoriApiController {
     @PostMapping("/reload")
     public ReloadResponse reload() {
         return noriDictionaryService.reloadIndex();
+    }
+
+    @ExceptionHandler(DuplicateNoriEntryException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public NoriEntry handleDuplicate(DuplicateNoriEntryException e) {
+        return e.getConflictEntry();
     }
 }

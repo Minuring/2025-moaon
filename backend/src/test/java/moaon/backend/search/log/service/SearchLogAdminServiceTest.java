@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.given;
 import java.util.List;
 import java.util.Optional;
 import moaon.backend.global.exception.custom.CustomException;
+import moaon.backend.search.log.domain.FieldMatchStats;
 import moaon.backend.search.log.domain.SearchLogDocument;
 import moaon.backend.search.log.dto.SearchLogDetail;
 import moaon.backend.search.log.dto.SearchLogSummary;
@@ -32,8 +33,7 @@ class SearchLogAdminServiceTest {
 
     @Test
     void list_ES에서_페이지를_조회해_SearchLogSummary로_반환한다() {
-        SearchLogDocument doc = new SearchLogDocument("spring", 5, 120, 20,
-                List.of("no_result"), List.of());
+        SearchLogDocument doc = new SearchLogDocument("spring", 5, 120, false, 0, FieldMatchStats.empty(), List.of());
         given(searchLogRepository.findAll(any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(doc)));
 
@@ -41,13 +41,12 @@ class SearchLogAdminServiceTest {
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).query()).isEqualTo("spring");
-        assertThat(result.getContent().get(0).badCaseScore()).isEqualTo(20);
     }
 
     @Test
     void detail_존재하는_id면_hits를_포함한_SearchLogDetail을_반환한다() {
         SearchLogDocument.SearchedDoc hit = new SearchLogDocument.SearchedDoc(1, 42L, "제목", 1.5f, List.of("title"));
-        SearchLogDocument doc = new SearchLogDocument("spring", 1, 100, 0, List.of(), List.of(hit));
+        SearchLogDocument doc = new SearchLogDocument("spring", 1, 100, false, 0, FieldMatchStats.empty(), List.of(hit));
         given(searchLogRepository.findById(doc.getId())).willReturn(Optional.of(doc));
 
         SearchLogDetail detail = searchLogAdminService.detail(doc.getId());

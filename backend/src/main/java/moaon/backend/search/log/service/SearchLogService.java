@@ -3,8 +3,7 @@ package moaon.backend.search.log.service;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import moaon.backend.search.log.*;
-import moaon.backend.search.log.domain.SearchHitLog;
+import moaon.backend.search.log.SearchLogRepository;
 import moaon.backend.search.log.domain.SearchLogCapture;
 import moaon.backend.search.log.domain.SearchLogDocument;
 import org.springframework.scheduling.annotation.Async;
@@ -16,17 +15,11 @@ import org.springframework.stereotype.Service;
 public class SearchLogService {
 
     private final SearchLogRepository searchLogRepository;
-    private final BadCaseScoreCalculator badCaseScoreCalculator;
 
     @Async
     public void saveAsync(SearchLogCapture logCapture) {
-        if (logCapture == null || logCapture.query() == null || logCapture.query().isBlank()) {
-            return;
-        }
         try {
-            BadCaseScoreCalculator.BadCaseScore badCaseScore = badCaseScoreCalculator.calculate(logCapture);
-            List<SearchHitLog> hits = logCapture.hits() != null ? logCapture.hits() : List.of();
-            List<SearchLogDocument.SearchedDoc> results = hits.stream()
+            List<SearchLogDocument.SearchedDoc> results = logCapture.hits().stream()
                     .map(hit -> new SearchLogDocument.SearchedDoc(
                             hit.rank(), hit.docId(), hit.title(), hit.score(), hit.matchedFields()))
                     .toList();
@@ -34,8 +27,9 @@ public class SearchLogService {
                     logCapture.query(),
                     logCapture.resultCount(),
                     logCapture.queryTimeMs(),
-                    badCaseScore.score(),
-                    badCaseScore.flags(),
+                    logCapture.hasCursor(),
+                    logCapture.synonymMatchCount(),
+                    logCapture.fieldMatchStats(),
                     results
             );
             searchLogRepository.save(doc);

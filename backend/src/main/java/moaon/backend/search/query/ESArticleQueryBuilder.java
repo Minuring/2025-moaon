@@ -23,6 +23,7 @@ import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 import org.springframework.data.elasticsearch.core.query.HighlightQuery;
 import org.springframework.data.elasticsearch.core.query.highlight.Highlight;
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightField;
+import org.springframework.data.elasticsearch.core.query.highlight.HighlightFieldParameters;
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightParameters;
 
 public class ESArticleQueryBuilder {
@@ -34,7 +35,13 @@ public class ESArticleQueryBuilder {
                     .withFragmentSize(255)
                     .withNumberOfFragments(1)
                     .build(),
-                    List.of(new HighlightField("title"), new HighlightField("summary"))
+                    List.of(
+                            new HighlightField("title"),
+                            new HighlightField("summary"),
+                            new HighlightField("content", HighlightFieldParameters.builder()
+                                    .withNumberOfFragments(0)
+                                    .build())
+                    )
             ), ArticleDocument.class);
 
     private final List<Query> musts = new ArrayList<>();
