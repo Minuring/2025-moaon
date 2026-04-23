@@ -80,5 +80,6 @@ jobs:
 
       - name: Pull latest image and deploy
         run: |
+          sudo docker compose -f docker/compose.new.yaml pull app
           sudo docker compose -f docker/compose.new.yaml up app -d
           sudo docker image prune -af
