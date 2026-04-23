@@ -26,6 +26,7 @@ function App() {
           <Routes>
             {/* <Route path="/" element={<EventLandingPage />} /> */}
             <Route path="/" element={<ProjectListPage />} />
+            <Route path="/project" element={<ProjectListPage />} />
             <Route path="/project/:id" element={<ProjectDetailPage />} />
             <Route path="/article" element={<ArticlePage />} />
             <Route path="/register" element={<RegisterPage />} />

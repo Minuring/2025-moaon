@@ -1,0 +1,20 @@
+services:
+  elastic:
+    build:
+      context: .
+      dockerfile: elastic.Dockerfile
+    container_name: elastic
+    ports:
+      - "80:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9200/_cluster/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./volumes/es:/usr/share/elasticsearch/data

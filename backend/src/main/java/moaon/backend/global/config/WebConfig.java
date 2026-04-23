@@ -11,15 +11,11 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins(
-                        "https://moaon.site",
-                        "https://www.moaon.site",
-                        "https://moaon.co.kr",
-                        "https://www.moaon.co.kr",
+                        "https://moaon.link",
+                        "https://www.moaon.link",
                         "http://localhost:3000",
-                        "https://staging.d3ekecjp6qvsw.amplifyapp.com",
-                        "https://popo.moaon.site"
+                        "https://staging.d3ekecjp6qvsw.amplifyapp.com"
                 )
-                .allowedOriginPatterns("https://moaon-preview-*.vercel.app")
                 .allowedMethods("*")
                 .allowedHeaders("*")
                 .allowCredentials(true)

@@ -5,4 +5,4 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME_NEW}
     password: ${SPRING_DATASOURCE_PASSWORD_NEW}
   elasticsearch:
-    uris: http://elastic:9200
+    uris: ${SPRING_ELASTICSEARCH_URIS}
