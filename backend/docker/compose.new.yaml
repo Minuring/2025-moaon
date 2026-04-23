@@ -2,9 +2,6 @@ services:
   app:
     image: ${DOCKERHUB_USERNAME}/moaon-backend:latest
     container_name: app
-    depends_on:
-      db:
-        condition: service_healthy
     ports:
       - "80:8080"
     environment:
@@ -32,31 +29,3 @@ services:
     labels:
       moaon.monitoring.role: app
 
-  db:
-    image: mysql:8.4
-    container_name: db
-    restart: always
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_ROOT_HOST: "%"
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      TZ: Asia/Seoul
-      LANG: C.UTF-8
-    volumes:
-      - ./volumes/db:/var/lib/mysql
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --performance_schema=ON
-      - --slow_query_log=ON
-      - --long_query_time=0.3
-      - --log_output=TABLE
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    labels:
-      moaon.monitoring.role: db
