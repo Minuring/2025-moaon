@@ -13,13 +13,11 @@ import { getArticleFilterList } from "./utils/getArticleFilterList";
 interface ArticleBoxHeaderProps {
   totalCount: number;
   isLoading: boolean;
-  onSelectSort: () => void;
   initialSort: keyof typeof ARTICLE_SORT_MAP;
 }
 
 function ArticleBoxHeader({
   totalCount,
-  onSelectSort,
   initialSort,
 }: ArticleBoxHeaderProps) {
   const shouldShowSort = totalCount > 0;
@@ -42,13 +40,13 @@ function ArticleBoxHeader({
         <SectorDropdown onSelect={updateSectorParams} />
       </S.SectorDropdownContainer>
       <S.FilterAndSortContainer>
-        <FilterContainer filterList={filterList} onSelect={onSelectSort} />
+        <FilterContainer filterList={filterList} onSelect={() => {}} />
         {shouldShowSort && (
           <>
             <S.SortListContainer>
               <SortList
                 sortMap={ARTICLE_SORT_MAP}
-                onSelect={onSelectSort}
+                onSelect={() => {}}
                 initialValue={hasSearch ? "relevance" : initialSort}
                 excludeKeys={excludeKeys}
               />
@@ -56,7 +54,7 @@ function ArticleBoxHeader({
             <S.SortDropdownContainer>
               <SortDropdown
                 sortMap={ARTICLE_SORT_MAP}
-                onSelect={onSelectSort}
+                onSelect={() => {}}
                 initialValue={hasSearch ? "relevance" : initialSort}
                 excludeKeys={excludeKeys}
               />

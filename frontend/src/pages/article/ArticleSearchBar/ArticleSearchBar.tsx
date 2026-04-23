@@ -2,13 +2,11 @@ import SearchBar from "@shared/components/SearchBar/SearchBar";
 import useDebounce from "@shared/hooks/useDebounce";
 import useSearchParams from "@shared/hooks/useSearchParams";
 import { useEffect, useRef, useState } from "react";
-import useArticleList from "../hooks/useArticleList";
 
 const MAX_SEARCH_LENGTH = 50;
 
 function ArticleSearchBar() {
   const params = useSearchParams({ key: "search", mode: "single" });
-  const { refetch } = useArticleList();
 
   const searchValue = params.get()[0] ?? "";
   const [inputValue, setInputValue] = useState(searchValue);
@@ -18,12 +16,10 @@ function ArticleSearchBar() {
   });
 
   const paramsRef = useRef(params);
-  const refetchRef = useRef(refetch);
 
   useEffect(() => {
     paramsRef.current = params;
-    refetchRef.current = refetch;
-  }, [params, refetch]);
+  }, [params]);
 
   useEffect(() => {
     const currentParam = paramsRef.current.get()[0] ?? "";
@@ -33,13 +29,11 @@ function ArticleSearchBar() {
     if (debouncedValue.trim() === "") {
       if (currentParam !== "") {
         paramsRef.current.deleteAll({ replace: true });
-        refetchRef.current();
       }
       return;
     }
 
     paramsRef.current.update(debouncedValue, { replace: true });
-    refetchRef.current();
   }, [debouncedValue]);
 
   return (

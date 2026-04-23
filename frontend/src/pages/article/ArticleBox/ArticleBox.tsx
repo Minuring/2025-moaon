@@ -15,7 +15,6 @@ function ArticleBox() {
     fetchNextPage,
     showSkeleton,
     scrollEnabled,
-    refetch,
     isLoading,
   } = useArticleList();
   const { targetRef } = useInfiniteScroll({
@@ -25,16 +24,11 @@ function ArticleBox() {
     scrollEnabled,
   });
 
-  const handleSelect = () => {
-    refetch();
-  };
-
   return (
     <S.ArticleBoxContainer>
       <ArticleBoxHeader
         totalCount={totalCount}
         isLoading={isLoading}
-        onSelectSort={handleSelect}
         initialSort={DEFAULT_SORT_TYPE}
       />
       <CardList

@@ -1,11 +1,22 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router";
 import { articlesQueries } from "@/apis/articles/articles.queries";
 import useDelayedVisibility from "@/shared/hooks/useDelayedVisibility";
 
 const useArticleList = () => {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+
+  const params = {
+    search: searchParams.get("search") ?? "",
+    sort: searchParams.get("sort") ?? "",
+    sector: searchParams.get("sector") ?? "",
+    techStacks: searchParams.get("techStacks") ?? "",
+    topics: searchParams.get("topics") ?? "",
+  };
+
   const { data, isLoading, fetchNextPage, isFetchingNextPage } =
-    useInfiniteQuery(articlesQueries.fetchList());
+    useInfiniteQuery(articlesQueries.fetchList(params));
 
   const articles = data?.pages.flatMap((page) => page.contents);
 

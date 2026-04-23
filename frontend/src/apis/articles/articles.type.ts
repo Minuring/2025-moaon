@@ -25,6 +25,14 @@ export interface Article {
   highlightSummary: string[] | null;
 }
 
+export interface ArticleQueryParams {
+  search: string;
+  sort: string;
+  sector: string;
+  techStacks: string;
+  topics: string;
+}
+
 export interface PostArticleData {
   projectId: number;
   title: string;
