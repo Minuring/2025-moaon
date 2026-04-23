@@ -13,6 +13,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                         "https://moaon.link",
                         "https://www.moaon.link",
+                        "https://api.moaon.link",
                         "http://localhost:3000",
                         "https://staging.d3ekecjp6qvsw.amplifyapp.com"
                 )
