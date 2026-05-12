@@ -144,7 +144,7 @@ public class GlobalExceptionHandler {
             Exception exception,
             @Nullable String detailMessage
     ) {
-        log.warn("[{}] {} {} | Exception Message: {}",
+        log.debug("[{}] {} {} | Exception Message: {}",
                 errorCode.name(),
                 errorCode.getId(),
                 errorCode.getMessage(),
