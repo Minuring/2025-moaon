@@ -27,8 +27,8 @@ public class SearchFacadeImpl implements SearchFacade {
     @Override
     public ArticleSearchResult search(ArticleQueryCondition condition) {
         SearchWithLog raw = articleDocumentRepository.search(condition);
-//        searchLogCaptureAssembler.assemble(raw.hitLogs(), raw.result().totalCount(), condition, raw.queryTimeMs())
-//                .ifPresent(searchLogService::saveAsync);
+        searchLogCaptureAssembler.assemble(raw.hitLogs(), raw.result().totalCount(), condition, raw.queryTimeMs())
+                .ifPresent(searchLogService::saveAsync);
         return raw.result();
     }
 
