@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.FetchSourceFilter;
 import org.springframework.data.elasticsearch.core.query.HighlightQuery;
 import org.springframework.data.elasticsearch.core.query.highlight.Highlight;
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightField;
@@ -142,6 +143,7 @@ public class ESArticleQueryBuilder {
                 .withTrackScores(true)  // always track for logging
                 .withPageable(pageable)
                 .withHighlightQuery(highlightQuery)
+                .withSourceFilter(new FetchSourceFilter(null, null, new String[]{"content"}))
                 .withTimeout(Duration.ofMillis(timeoutMillis));
 
         if (sort != null) {
