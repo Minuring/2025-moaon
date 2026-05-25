@@ -19,7 +19,6 @@ public record SearchHitLog(int rank, Long docId, String title, float score,
         List<String> fields = new ArrayList<>();
         if (hasHighlight(highlights, "title")) fields.add("title");
         if (hasHighlight(highlights, "summary")) fields.add("summary");
-        if (hasHighlight(highlights, "content")) fields.add("content");
         if (fields.isEmpty()) fields.add("content");
         return fields;
     }
@@ -28,7 +27,6 @@ public record SearchHitLog(int rank, Long docId, String title, float score,
         Map<String, List<String>> snippets = new HashMap<>();
         if (hasHighlight(highlights, "title")) snippets.put("title", highlights.get("title"));
         if (hasHighlight(highlights, "summary")) snippets.put("summary", highlights.get("summary"));
-        if (hasHighlight(highlights, "content")) snippets.put("content", highlights.get("content"));
         return snippets;
     }
 

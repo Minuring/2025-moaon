@@ -24,7 +24,6 @@ import org.springframework.data.elasticsearch.core.query.FetchSourceFilter;
 import org.springframework.data.elasticsearch.core.query.HighlightQuery;
 import org.springframework.data.elasticsearch.core.query.highlight.Highlight;
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightField;
-import org.springframework.data.elasticsearch.core.query.highlight.HighlightFieldParameters;
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightParameters;
 
 public class ESArticleQueryBuilder {
@@ -38,10 +37,7 @@ public class ESArticleQueryBuilder {
                     .build(),
                     List.of(
                             new HighlightField("title"),
-                            new HighlightField("summary"),
-                            new HighlightField("content", HighlightFieldParameters.builder()
-                                    .withNumberOfFragments(0)
-                                    .build())
+                            new HighlightField("summary")
                     )
             ), ArticleDocument.class);
 
