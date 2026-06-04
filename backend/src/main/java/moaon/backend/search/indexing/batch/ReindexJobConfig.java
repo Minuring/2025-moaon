@@ -28,6 +28,7 @@ public class ReindexJobConfig {
     private final ArticleIndexRepository indexRepository;
     private final ArticleDBRepository articleDBRepository;
     private final EntityManagerFactory entityManagerFactory;
+    private final BatchMetricsListener batchMetricsListener;
 
     @Bean
     public Job articleReindexJob(
@@ -49,6 +50,7 @@ public class ReindexJobConfig {
                 .reader(articleItemReader)
                 .processor(new ArticleItemProcessor())
                 .writer(articleItemWriter)
+                .listener(articleItemWriter)
                 .build();
 
         var switchAliasStep = new StepBuilder("switchAliasStep", jobRepository)
@@ -56,6 +58,7 @@ public class ReindexJobConfig {
                 .build();
 
         return new JobBuilder("articleReindexJob", jobRepository)
+                .listener(batchMetricsListener)
                 .start(createNewIndexStep)
                 .next(indexArticlesStep)
                 .next(switchAliasStep)
