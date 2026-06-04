@@ -25,6 +25,12 @@ spring:
       ddl-auto: validate
     open-in-view: false
 
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
+
 management:
   endpoints:
     web:
@@ -82,7 +88,5 @@ resilience4j:
 # (최소 5개 이상의) 최근 10개 호출에서 실패율이 50%를 넘으면, 60초간 Open함.
 
 reindex:
-  flag-path: ${REINDEX_FLAG_PATH:/tmp/reindex-required.flag}
-  batch-size: ${REINDEX_BATCH_SIZE:1000}
   cron: ${REINDEX_CRON:0 0 3 * * *}
 
