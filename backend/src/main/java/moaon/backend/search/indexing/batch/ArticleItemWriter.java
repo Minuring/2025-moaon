@@ -11,16 +11,25 @@ import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
 
 @Slf4j
-@RequiredArgsConstructor
 public class ArticleItemWriter implements ItemWriter<IndexQuery> {
 
     private final ArticleIndexRepository indexRepository;
     private final IndexCoordinates targetIndex;
+    private final long totalCount;
+    private long indexedCount = 0;
+
+    public ArticleItemWriter(ArticleIndexRepository indexRepository, IndexCoordinates targetIndex, long totalCount) {
+        this.indexRepository = indexRepository;
+        this.targetIndex = targetIndex;
+        this.totalCount = totalCount;
+    }
 
     @Override
     public void write(Chunk<? extends IndexQuery> chunk) {
         List<IndexQuery> items = new ArrayList<>(chunk.getItems());
         indexRepository.bulkIndex(items, targetIndex);
-        log.info("{}개 문서 색인 완료 (인덱스: {})", items.size(), targetIndex.getIndexName());
+        indexedCount += items.size();
+        int percent = totalCount > 0 ? (int) (indexedCount * 100 / totalCount) : 0;
+        log.info("{}/{} ({}%) 색인 완료", indexedCount, totalCount, percent);
     }
 }

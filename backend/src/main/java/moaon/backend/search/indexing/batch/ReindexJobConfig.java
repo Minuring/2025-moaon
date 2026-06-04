@@ -3,6 +3,7 @@ package moaon.backend.search.indexing.batch;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import moaon.backend.article.domain.Article;
+import moaon.backend.article.repository.ArticleDBRepository;
 import moaon.backend.search.indexing.ArticleIndexRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -25,6 +26,7 @@ public class ReindexJobConfig {
     private static final int CHUNK_SIZE = 500;
 
     private final ArticleIndexRepository indexRepository;
+    private final ArticleDBRepository articleDBRepository;
     private final EntityManagerFactory entityManagerFactory;
 
     @Bean
@@ -60,12 +62,13 @@ public class ReindexJobConfig {
                 .build();
     }
 
-    // @StepScope: Step 시작 시점에 jobExecutionContext에서 newIndexName을 읽어 주입
+    // @StepScope: Step 시작 시점에 jobExecutionContext에서 newIndexName을 읽어 주입, totalCount도 이 시점에 조회
     @Bean
     @StepScope
     public ArticleItemWriter articleItemWriter(
             @Value("#{jobExecutionContext['newIndexName']}") String newIndexName) {
-        return new ArticleItemWriter(indexRepository, IndexCoordinates.of(newIndexName));
+        long totalCount = articleDBRepository.count();
+        return new ArticleItemWriter(indexRepository, IndexCoordinates.of(newIndexName), totalCount);
     }
 
     @Bean
