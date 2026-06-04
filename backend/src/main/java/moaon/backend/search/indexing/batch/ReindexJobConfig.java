@@ -1,6 +1,8 @@
 package moaon.backend.search.indexing.batch;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.repository.ArticleDBRepository;
@@ -29,6 +31,9 @@ public class ReindexJobConfig {
     private final ArticleDBRepository articleDBRepository;
     private final EntityManagerFactory entityManagerFactory;
     private final BatchMetricsListener batchMetricsListener;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Bean
     public Job articleReindexJob(
@@ -71,7 +76,7 @@ public class ReindexJobConfig {
     public ArticleItemWriter articleItemWriter(
             @Value("#{jobExecutionContext['newIndexName']}") String newIndexName) {
         long totalCount = articleDBRepository.count();
-        return new ArticleItemWriter(indexRepository, IndexCoordinates.of(newIndexName), totalCount);
+        return new ArticleItemWriter(indexRepository, IndexCoordinates.of(newIndexName), totalCount, entityManager);
     }
 
     @Bean

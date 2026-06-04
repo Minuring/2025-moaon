@@ -1,5 +1,6 @@
 package moaon.backend.search.indexing.batch;
 
+import jakarta.persistence.EntityManager;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,19 +20,22 @@ public class ArticleItemWriter implements ItemWriter<IndexQuery>, StepExecutionL
     private final ArticleIndexRepository indexRepository;
     private final IndexCoordinates targetIndex;
     private final long totalCount;
+    private final EntityManager entityManager;
     private long indexedCount = 0;
     private long peakHeapMb = 0;
 
-    public ArticleItemWriter(ArticleIndexRepository indexRepository, IndexCoordinates targetIndex, long totalCount) {
+    public ArticleItemWriter(ArticleIndexRepository indexRepository, IndexCoordinates targetIndex, long totalCount, EntityManager entityManager) {
         this.indexRepository = indexRepository;
         this.targetIndex = targetIndex;
         this.totalCount = totalCount;
+        this.entityManager = entityManager;
     }
 
     @Override
     public void write(Chunk<? extends IndexQuery> chunk) {
         List<IndexQuery> items = new ArrayList<>(chunk.getItems());
         indexRepository.bulkIndex(items, targetIndex);
+        entityManager.clear();
         indexedCount += items.size();
         int percent = totalCount > 0 ? (int) (indexedCount * 100 / totalCount) : 0;
         var heap = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
