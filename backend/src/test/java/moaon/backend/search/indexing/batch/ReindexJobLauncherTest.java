@@ -54,15 +54,24 @@ class ReindexJobLauncherTest {
 
     @Test
     void 이전_실행이_FAILED이면_같은_파라미터로_재시작한다() {
+        assertRestartWithStatus(BatchStatus.FAILED);
+    }
+
+    @Test
+    void 이전_실행이_STARTED이면_같은_파라미터로_재시작한다() {
+        assertRestartWithStatus(BatchStatus.STARTED);
+    }
+
+    private void assertRestartWithStatus(BatchStatus status) {
         var instance = mock(JobInstance.class);
         var execution = mock(JobExecution.class);
-        JobParameters failedParams = new JobParametersBuilder()
+        JobParameters prevParams = new JobParametersBuilder()
                 .addLong("runAt", 12345L)
                 .toJobParameters();
         when(jobExplorer.getLastJobInstance("articleReindexJob")).thenReturn(instance);
         when(jobExplorer.getLastJobExecution(instance)).thenReturn(execution);
-        when(execution.getStatus()).thenReturn(BatchStatus.FAILED);
-        when(execution.getJobParameters()).thenReturn(failedParams);
+        when(execution.getStatus()).thenReturn(status);
+        when(execution.getJobParameters()).thenReturn(prevParams);
 
         var params = launcher.resolveJobParameters();
 

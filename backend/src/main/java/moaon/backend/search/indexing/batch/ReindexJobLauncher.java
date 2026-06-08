@@ -34,8 +34,10 @@ public class ReindexJobLauncher {
         var lastInstance = jobExplorer.getLastJobInstance("articleReindexJob");
         if (lastInstance != null) {
             var lastExecution = jobExplorer.getLastJobExecution(lastInstance);
-            if (lastExecution != null && lastExecution.getStatus() == BatchStatus.FAILED) {
-                log.info("이전 실패 실행 재시작");
+            if (lastExecution != null
+                    && lastExecution.getStatus() != BatchStatus.COMPLETED
+                    && lastExecution.getStatus() != BatchStatus.ABANDONED) {
+                log.info("이전 실패/중단 실행 재시작 (status: {})", lastExecution.getStatus());
                 return lastExecution.getJobParameters();
             }
         }
