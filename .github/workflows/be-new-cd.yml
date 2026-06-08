@@ -40,27 +40,16 @@ jobs:
           dockerfile: ./backend/docker/new.Dockerfile
           skip-extraction: ${{ steps.gradle_cache.outputs.cache-hit }}
 
-      - name: Build and push app image
+      - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           file: ./backend/docker/new.Dockerfile
-          target: app
           push: true
           platforms: linux/arm64
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/moaon-backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push reindex image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          file: ./backend/docker/new.Dockerfile
-          target: reindex
-          push: true
-          platforms: linux/arm64
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/moaon-backend-reindex:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/moaon-backend:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
