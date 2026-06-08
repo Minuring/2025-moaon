@@ -30,7 +30,7 @@ public class ReindexJobLauncher {
         }
     }
 
-    private JobParameters resolveJobParameters() {
+    JobParameters resolveJobParameters() {
         var lastInstance = jobExplorer.getLastJobInstance("articleReindexJob");
         if (lastInstance != null) {
             var lastExecution = jobExplorer.getLastJobExecution(lastInstance);
