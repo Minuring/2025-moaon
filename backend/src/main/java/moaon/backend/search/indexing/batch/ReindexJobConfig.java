@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.repository.ArticleDBRepository;
 import moaon.backend.search.indexing.ArticleIndexRepository;
+import moaon.backend.search.indexing.outbox.IndexEventRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -31,6 +32,7 @@ public class ReindexJobConfig {
     private final ArticleDBRepository articleDBRepository;
     private final EntityManagerFactory entityManagerFactory;
     private final BatchMetricsListener batchMetricsListener;
+    private final IndexEventRepository indexEventRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -62,11 +64,16 @@ public class ReindexJobConfig {
                 .tasklet(new SwitchAliasTasklet(indexRepository), transactionManager)
                 .build();
 
+        var replayOutboxStep = new StepBuilder("replayOutboxStep", jobRepository)
+                .tasklet(new ReplayOutboxTasklet(indexEventRepository), transactionManager)
+                .build();
+
         return new JobBuilder("articleReindexJob", jobRepository)
                 .listener(batchMetricsListener)
                 .start(createNewIndexStep)
                 .next(indexArticlesStep)
                 .next(switchAliasStep)
+                .next(replayOutboxStep)
                 .build();
     }
 

@@ -1,5 +1,6 @@
 package moaon.backend.search.indexing.outbox;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,4 +36,8 @@ public interface IndexEventRepository extends Repository<IndexEvent, Long> {
     @Query("SELECT i FROM IndexEvent i WHERE i.processedRevision < i.requiredRevision ORDER BY i.updatedAt ASC")
     @Transactional(readOnly = true)
     List<IndexEvent> findDueToProcess(Pageable pageable);
+
+    @Modifying
+    @Query("UPDATE IndexEvent e SET e.requiredRevision = e.requiredRevision + 1 WHERE e.updatedAt >= :since")
+    int incrementRequiredRevisionSince(@Param("since") LocalDateTime since);
 }

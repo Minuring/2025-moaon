@@ -3,6 +3,7 @@ package moaon.backend.search.indexing.outbox;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import jakarta.persistence.EntityManager;
+import java.time.LocalDateTime;
 import java.util.List;
 import moaon.backend.search.indexing.outbox.IndexEvent;
 import moaon.backend.search.indexing.outbox.IndexEvent.Action;
@@ -152,6 +153,71 @@ class IndexEventRepositoryTest {
         assertThat(found).isNotNull();
         assertThat(found.getEntityId()).isEqualTo(4000L);
         assertThat(found.getAction()).isEqualTo(Action.INDEXING);
+    }
+
+    @Test
+    @DisplayName("incrementRequiredRevisionSince: updatedAt >= since인 이벤트의 requiredRevision을 1 증가시킨다")
+    void incrementRequiredRevisionForRecentEvents() {
+        // given
+        LocalDateTime since = LocalDateTime.of(2024, 6, 1, 0, 0, 0);
+
+        IndexEvent recentEvent = IndexEvent.builder()
+                .entityId(7000L)
+                .action(Action.INDEXING)
+                .requiredRevision(2)
+                .processedRevision(2)
+                .updatedAt(since.plusHours(1))
+                .build();
+
+        IndexEvent oldEvent = IndexEvent.builder()
+                .entityId(7001L)
+                .action(Action.INDEXING)
+                .requiredRevision(2)
+                .processedRevision(2)
+                .updatedAt(since.minusSeconds(1))
+                .build();
+
+        entityManager.persist(recentEvent);
+        entityManager.persist(oldEvent);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        int count = repository.incrementRequiredRevisionSince(since);
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        assertThat(count).isEqualTo(1);
+        assertThat(entityManager.find(IndexEvent.class, 7000L).getRequiredRevision()).isEqualTo(3);
+        assertThat(entityManager.find(IndexEvent.class, 7001L).getRequiredRevision()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("incrementRequiredRevisionSince: updatedAt == since인 경계값 이벤트도 포함된다")
+    void incrementRequiredRevisionIncludesBoundary() {
+        // given
+        LocalDateTime since = LocalDateTime.of(2024, 6, 1, 0, 0, 0);
+
+        IndexEvent exactEvent = IndexEvent.builder()
+                .entityId(8000L)
+                .action(Action.INDEXING)
+                .requiredRevision(1)
+                .processedRevision(1)
+                .updatedAt(since)
+                .build();
+
+        entityManager.persist(exactEvent);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        repository.incrementRequiredRevisionSince(since);
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        assertThat(entityManager.find(IndexEvent.class, 8000L).getRequiredRevision()).isEqualTo(2);
     }
 
     @Test
