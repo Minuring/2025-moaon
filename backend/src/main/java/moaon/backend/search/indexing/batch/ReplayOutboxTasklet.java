@@ -2,7 +2,7 @@ package moaon.backend.search.indexing.batch;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.search.indexing.outbox.IndexEventRepository;
@@ -23,9 +23,9 @@ public class ReplayOutboxTasklet implements Tasklet {
                 .getStepExecution()
                 .getJobParameters()
                 .getLong("runAt");
-        LocalDateTime since = LocalDateTime.ofInstant(Instant.ofEpochMilli(runAt), ZoneId.of("Asia/Seoul"));
+        LocalDateTime since = LocalDateTime.ofInstant(Instant.ofEpochMilli(runAt), ZoneOffset.UTC);
         int count = indexEventRepository.incrementRequiredRevisionSince(since);
-        log.info("전체 색인 중 발생한 Outbox 이벤트 {} 건 replay 예약 (since: {})", count, since);
+        log.info("전체 색인 중 발생한 Outbox 이벤트 {} 건 replay 예약 (since(UTC): {})", count, since);
         return RepeatStatus.FINISHED;
     }
 }
