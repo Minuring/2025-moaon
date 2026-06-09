@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import moaon.backend.search.indexing.outbox.IndexEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ class ReplayOutboxTaskletTest {
     @Test
     void runAt_파라미터를_LocalDateTime으로_변환하여_incrementRequiredRevisionSince를_호출한다() {
         long runAt = System.currentTimeMillis();
-        LocalDateTime expectedSince = LocalDateTime.ofInstant(Instant.ofEpochMilli(runAt), ZoneId.systemDefault());
+        LocalDateTime expectedSince = LocalDateTime.ofInstant(Instant.ofEpochMilli(runAt), ZoneId.of("Asia/Seoul"));
 
         tasklet.execute(mock(StepContribution.class), chunkContextWith(runAt));
 

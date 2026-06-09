@@ -23,7 +23,7 @@ public class ReplayOutboxTasklet implements Tasklet {
                 .getStepExecution()
                 .getJobParameters()
                 .getLong("runAt");
-        LocalDateTime since = LocalDateTime.ofInstant(Instant.ofEpochMilli(runAt), ZoneId.systemDefault());
+        LocalDateTime since = LocalDateTime.ofInstant(Instant.ofEpochMilli(runAt), ZoneId.of("Asia/Seoul"));
         int count = indexEventRepository.incrementRequiredRevisionSince(since);
         log.info("전체 색인 중 발생한 Outbox 이벤트 {} 건 replay 예약 (since: {})", count, since);
         return RepeatStatus.FINISHED;
