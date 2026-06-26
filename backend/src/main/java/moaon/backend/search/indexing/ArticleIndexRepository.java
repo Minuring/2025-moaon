@@ -1,5 +1,7 @@
 package moaon.backend.search.indexing;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +32,7 @@ public class ArticleIndexRepository {
             .build();
 
     private final ElasticsearchOperations ops;
+    private final ElasticsearchClient esClient;
 
     public boolean createIndex(IndexCoordinates indexWrapper, Class<?> documentClass) {
         IndexOperations iops = ops.indexOps(indexWrapper);
@@ -41,6 +44,25 @@ public class ArticleIndexRepository {
         Settings settings = iops.createSettings(documentClass);
 
         return iops.create(settings, mapping);
+    }
+
+    public void updateRefreshInterval(IndexCoordinates indexWrapper, String refreshInterval) {
+        try {
+            esClient.indices().putSettings(r -> r
+                    .index(indexWrapper.getIndexName())
+                    .settings(s -> s.refreshInterval(t -> t.time(refreshInterval)))
+            );
+        } catch (IOException e) {
+            throw new IllegalStateException("index settings 업데이트 실패: " + indexWrapper.getIndexName(), e);
+        }
+    }
+
+    public void forcemerge(IndexCoordinates indexWrapper) {
+        try {
+            esClient.indices().forcemerge(f -> f.index(indexWrapper.getIndexName()).maxNumSegments(1L));
+        } catch (IOException e) {
+            throw new IllegalStateException("forcemerge 실패: " + indexWrapper.getIndexName(), e);
+        }
     }
 
     public void bulkIndex(List<IndexQuery> documentQueries, IndexCoordinates indexWrapper) {

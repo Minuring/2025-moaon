@@ -28,7 +28,8 @@ public class CreateNewIndexTasklet implements Tasklet {
         var newIndexCoords = IndexCoordinates.of(newIndexName);
 
         indexRepository.createIndex(newIndexCoords, ArticleDocument.class);
-        log.info("새 인덱스 생성: {}", newIndexName);
+        indexRepository.updateRefreshInterval(newIndexCoords, "-1");
+        log.info("새 인덱스 생성 (refresh 비활성화): {}", newIndexName);
 
         chunkContext.getStepContext()
                 .getStepExecution()

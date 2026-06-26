@@ -60,6 +60,10 @@ public class ReindexJobConfig {
                 .listener(articleItemWriter)
                 .build();
 
+        var optimizeIndexStep = new StepBuilder("optimizeIndexStep", jobRepository)
+                .tasklet(new OptimizeIndexTasklet(indexRepository), transactionManager)
+                .build();
+
         var switchAliasStep = new StepBuilder("switchAliasStep", jobRepository)
                 .tasklet(new SwitchAliasTasklet(indexRepository), transactionManager)
                 .build();
@@ -72,6 +76,7 @@ public class ReindexJobConfig {
                 .listener(batchMetricsListener)
                 .start(createNewIndexStep)
                 .next(indexArticlesStep)
+                .next(optimizeIndexStep)
                 .next(switchAliasStep)
                 .next(replayOutboxStep)
                 .build();
