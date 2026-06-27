@@ -48,10 +48,6 @@ public class ReindexJobConfig {
                 .tasklet(new CreateNewIndexTasklet(indexRepository), transactionManager)
                 .build();
 
-        // JpaCursorItemReader: DB에서 커서 방식으로 Article을 스트리밍
-        // - project는 JOIN FETCH로 즉시 로딩 (ArticleDocument 생성 시 필요)
-        // - 나머지 연관관계(topics, techStacks, contentSeparated)는 열린 EntityManager 내에서 지연 로딩
-        // - 알려진 한계: topics, techStacks 접근 시 N+1 쿼리 발생 (추후 개선 예정)
         var indexArticlesStep = new StepBuilder("indexArticlesStep", jobRepository)
                 .<Article, IndexQuery>chunk(CHUNK_SIZE, transactionManager)
                 .reader(articleItemReader)
