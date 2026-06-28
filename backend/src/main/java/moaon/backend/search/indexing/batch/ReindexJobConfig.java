@@ -22,7 +22,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 @RequiredArgsConstructor
 public class ReindexJobConfig {
 
-    private static final int CHUNK_SIZE = 500;
+    @Value("${reindex.chunk-size:500}")
+    private int chunkSize;
 
     private final ArticleIndexRepository indexRepository;
     private final DataSource dataSource;
@@ -41,7 +42,7 @@ public class ReindexJobConfig {
                 .build();
 
         var indexArticlesStep = new StepBuilder("indexArticlesStep", jobRepository)
-                .<ArticleDocument, IndexQuery>chunk(CHUNK_SIZE, transactionManager)
+                .<ArticleDocument, IndexQuery>chunk(chunkSize, transactionManager)
                 .reader(articleJdbcPagingReader)
                 .processor(new ArticleItemProcessor())
                 .writer(articleItemWriter)
@@ -81,6 +82,6 @@ public class ReindexJobConfig {
     @Bean
     @StepScope
     public ArticleJdbcPagingReader articleJdbcPagingReader() {
-        return new ArticleJdbcPagingReader(dataSource, CHUNK_SIZE);
+        return new ArticleJdbcPagingReader(dataSource, chunkSize);
     }
 }
