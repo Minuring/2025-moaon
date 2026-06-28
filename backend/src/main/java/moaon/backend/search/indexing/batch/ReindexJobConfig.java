@@ -81,6 +81,6 @@ public class ReindexJobConfig {
     @Bean
     @StepScope
     public ArticleJdbcPagingReader articleJdbcPagingReader() {
-        return new ArticleJdbcPagingReader(dataSource, new ArticleDocumentRowMapper(), CHUNK_SIZE);
+        return new ArticleJdbcPagingReader(dataSource, CHUNK_SIZE);
     }
 }
