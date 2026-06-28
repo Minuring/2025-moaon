@@ -25,7 +25,7 @@ public class ArticleJdbcPagingReader implements ItemReader<ArticleDocument>, Ite
             INNER JOIN project p ON p.id = a.project_id
             LEFT JOIN article_content_separated acs ON acs.id = a.id
             LEFT JOIN article_tech_stack ats ON ats.article_id = a.id
-            LEFT JOIN tech_stack ts ON ts.id = ats.tech_stacks_id
+            LEFT JOIN tech_stack ts ON ts.id = ats.tech_stack_id
             LEFT JOIN article_topics at2 ON at2.article_id = a.id
             WHERE a.id > :lastId
             GROUP BY a.id, a.title, a.summary, acs.content, a.article_url, a.clicks, a.created_at, a.sector, p.id, p.title
