@@ -2,7 +2,7 @@ name: BE Deploy
 
 on:
   push:
-    branches: [ "me", "fullindex" ]
+    branches: [ "me" ]
 
 jobs:
   build-and-push-image:
