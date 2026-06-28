@@ -1,3 +1,10 @@
 spring:
   profiles:
     active: test
+
+#  TODO: 임시조치
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
