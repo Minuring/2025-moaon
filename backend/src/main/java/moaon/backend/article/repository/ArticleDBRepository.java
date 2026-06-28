@@ -18,6 +18,8 @@ public interface ArticleDBRepository extends Repository<Article, Long> {
     @Query("select a from Article a")
     Stream<Article> streamAll();
 
+    long count();
+
     @Modifying
     @Query("update Article a set a.clicks = a.clicks + 1 where a.id = :id")
     int increaseClickCount(Long id);
