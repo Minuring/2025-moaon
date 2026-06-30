@@ -60,7 +60,7 @@ public class GoogleOAuthClient {
                 .build()) {
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
 
-            validateStatusCode(response.statusCode());
+            validateStatusCode(response);
 
             String body = response.body();
             ObjectMapper objectMapper = new ObjectMapper();
@@ -71,9 +71,9 @@ public class GoogleOAuthClient {
         }
     }
 
-    private void validateStatusCode(int statusCode) {
-        if (statusCode != 200) {
-            throw new IllegalStateException("[ERROR] 구글 로그인 과정에 실패했습니다.");
+    private void validateStatusCode(HttpResponse<String> resp) {
+        if (resp.statusCode() != 200) {
+            throw new IllegalStateException("[ERROR] 구글 로그인 과정에 실패했습니다. response body : " + resp.body());
         }
     }
 
