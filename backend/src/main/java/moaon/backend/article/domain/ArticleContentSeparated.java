@@ -7,10 +7,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import lombok.Getter;
-import org.hibernate.annotations.BatchSize;
-
 @Entity
-@BatchSize(size = 500)
 public class ArticleContentSeparated {
 
     @Id

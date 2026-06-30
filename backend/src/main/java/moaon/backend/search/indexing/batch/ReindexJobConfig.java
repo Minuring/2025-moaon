@@ -1,47 +1,40 @@
 package moaon.backend.search.indexing.batch;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.PersistenceContext;
+import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
-import moaon.backend.article.domain.Article;
-import moaon.backend.article.repository.ArticleDBRepository;
 import moaon.backend.search.indexing.ArticleIndexRepository;
 import moaon.backend.search.indexing.outbox.IndexEventRepository;
+import moaon.backend.search.query.ArticleDocument;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.database.JpaCursorItemReader;
-import org.springframework.batch.item.database.builder.JpaCursorItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @RequiredArgsConstructor
 public class ReindexJobConfig {
 
-    private static final int CHUNK_SIZE = 500;
+    @Value("${reindex.chunk-size:500}")
+    private int chunkSize;
 
     private final ArticleIndexRepository indexRepository;
-    private final ArticleDBRepository articleDBRepository;
-    private final EntityManagerFactory entityManagerFactory;
+    private final DataSource dataSource;
     private final BatchMetricsListener batchMetricsListener;
     private final IndexEventRepository indexEventRepository;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     @Bean
     public Job articleReindexJob(
             JobRepository jobRepository,
             PlatformTransactionManager transactionManager,
-            JpaCursorItemReader<Article> articleItemReader,
+            ArticleJdbcPagingReader articleJdbcPagingReader,
             ArticleItemWriter articleItemWriter
     ) {
         var createNewIndexStep = new StepBuilder("createNewIndexStep", jobRepository)
@@ -49,8 +42,8 @@ public class ReindexJobConfig {
                 .build();
 
         var indexArticlesStep = new StepBuilder("indexArticlesStep", jobRepository)
-                .<Article, IndexQuery>chunk(CHUNK_SIZE, transactionManager)
-                .reader(articleItemReader)
+                .<ArticleDocument, IndexQuery>chunk(chunkSize, transactionManager)
+                .reader(articleJdbcPagingReader)
                 .processor(new ArticleItemProcessor())
                 .writer(articleItemWriter)
                 .listener(articleItemWriter)
@@ -78,22 +71,17 @@ public class ReindexJobConfig {
                 .build();
     }
 
-    // @StepScope: Step 시작 시점에 jobExecutionContext에서 newIndexName을 읽어 주입, totalCount도 이 시점에 조회
     @Bean
     @StepScope
     public ArticleItemWriter articleItemWriter(
             @Value("#{jobExecutionContext['newIndexName']}") String newIndexName) {
-        long totalCount = articleDBRepository.count();
-        return new ArticleItemWriter(indexRepository, IndexCoordinates.of(newIndexName), totalCount, entityManager);
+        long totalCount = new JdbcTemplate(dataSource).queryForObject("SELECT COUNT(*) FROM article", Long.class);
+        return new ArticleItemWriter(indexRepository, IndexCoordinates.of(newIndexName), totalCount);
     }
 
     @Bean
     @StepScope
-    public JpaCursorItemReader<Article> articleItemReader() {
-        return new JpaCursorItemReaderBuilder<Article>()
-                .name("articleItemReader")
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("SELECT a FROM Article a JOIN FETCH a.project")
-                .build();
+    public ArticleJdbcPagingReader articleJdbcPagingReader() {
+        return new ArticleJdbcPagingReader(dataSource, chunkSize);
     }
 }
