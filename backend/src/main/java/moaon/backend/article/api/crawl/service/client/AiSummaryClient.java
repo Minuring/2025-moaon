@@ -86,7 +86,7 @@ public class AiSummaryClient {
         this.readTimeoutMillis = readTimeoutMillis;
     }
 
-    @CircuitBreaker(name = "aiSummaryCircuitBreaker", fallbackMethod = "fallback")
+    @CircuitBreaker(name = "aiSummaryCircuitBreaker")
     public AiSummarization summarize(String content, String model) {
         if (content == null || content.isEmpty()) {
             return AiSummarization.nothing();
@@ -107,10 +107,6 @@ public class AiSummaryClient {
             log.error("AI 요약 API 연결에서 실패했습니다.", e);
             throw new CustomException(ErrorCode.ARTICLE_CRAWL_FAILED, e);
         }
-    }
-
-    private AiSummarization fallback(Exception e) {
-        return AiSummarization.nothing();
     }
 
     private String createRequestBody(final String model, final String userContent) throws JsonProcessingException {

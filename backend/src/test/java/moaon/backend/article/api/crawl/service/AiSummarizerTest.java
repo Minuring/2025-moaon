@@ -25,7 +25,7 @@ import org.mockito.Mockito;
 class AiSummarizerTest {
 
     private final AiSummaryClient aiSummaryClient = Mockito.mock(AiSummaryClient.class);
-    private final AiSummarizer summarizer = new AiSummarizer(aiSummaryClient);
+    private final AiSummarizer summarizer = new AiSummarizer(aiSummaryClient, "google/gemini-2.5-flash");
 
     @DisplayName("한 사용자가 하루 20번 초과 크롤링시 AI요약 없이 빈 summary를 반환한다.")
     @Test
@@ -50,7 +50,7 @@ class AiSummarizerTest {
 
         HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
         AiSummaryClient aiSummaryClient = new AiSummaryClient("api key here", httpClient, 5000L);
-        AiSummarizer aiSummarizer = new AiSummarizer(aiSummaryClient);
+        AiSummarizer aiSummarizer = new AiSummarizer(aiSummaryClient, "google/gemini-2.5-flash");
 
         // when
         Member member = new Member(1L, "socialId", "abc@gmail.com", "poopo", 0);

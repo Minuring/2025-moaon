@@ -46,6 +46,7 @@ s3:
 
 gpt:
   api-key: testKey
+  model: google/gemini-2.5-flash
   connect-timeout-millis: 1000
   read-timeout-millis: 5000
 
