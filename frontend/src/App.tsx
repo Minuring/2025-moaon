@@ -5,8 +5,10 @@ import { Route, Routes } from "react-router";
 import useTrackPageTimeGA from "./libs/googleAnalytics/hooks/useTrackPageTimeGA";
 import {
   ArticlePage,
+  ArticleRegisterPage,
   CompanyEventPage,
   EventLandingPage,
+  MyPage,
   NotFoundPage,
   OAuthCallback,
   ProjectDetailPage,
@@ -30,6 +32,8 @@ function App() {
             <Route path="/project/:id" element={<ProjectDetailPage />} />
             <Route path="/article" element={<ArticlePage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/mypage" element={<MyPage />} />
+            <Route path="/article/register" element={<ArticleRegisterPage />} />
             <Route path="/oauth/callback/:result" element={<OAuthCallback />} />
             <Route path="/wooteco" element={<WootecoEventPage />} />
             <Route path="/wooteco/:company" element={<CompanyEventPage />} />

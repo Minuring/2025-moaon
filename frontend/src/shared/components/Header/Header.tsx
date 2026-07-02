@@ -49,7 +49,11 @@ function Header() {
           {auth?.isLoggedIn && (
             <UserMenu
               name={auth.name ?? "Anonymous"}
-              onSelect={() => {
+              onSelect={(key) => {
+                if (key === "mypage") {
+                  navigate("/mypage");
+                  return;
+                }
                 logout();
                 getCookieValue("token")
                   ? toast.error("로그아웃에 실패했어요. 다시 시도해주세요.")

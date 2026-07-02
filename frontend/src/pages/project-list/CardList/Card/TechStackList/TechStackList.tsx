@@ -5,7 +5,7 @@ interface TechStackListProps {
   techStacks: TechStackKey[];
 }
 
-function TechStackList({ techStacks, ...rest }: TechStackListProps) {
+function TechStackList({ techStacks = [], ...rest }: TechStackListProps) {
   const shownTechStacks = TECH_STACK_ENTRY.filter(([key]) =>
     techStacks.includes(key as TechStackKey),
   );

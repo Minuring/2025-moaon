@@ -8,7 +8,6 @@ import java.util.List;
 import moaon.backend.article.service.ArticleService;
 import moaon.backend.global.cookie.AccessHistory;
 import moaon.backend.global.cookie.TrackingCookieManager;
-import moaon.backend.member.service.MemberService;
 import moaon.backend.project.dto.PagedProjectResponse;
 import moaon.backend.project.dto.ProjectArticleQueryCondition;
 import moaon.backend.project.dto.ProjectArticleResponse;
@@ -16,6 +15,7 @@ import moaon.backend.project.dto.ProjectCreateRequest;
 import moaon.backend.project.dto.ProjectCreateResponse;
 import moaon.backend.project.dto.ProjectDetailResponse;
 import moaon.backend.project.dto.ProjectQueryCondition;
+import moaon.backend.project.dto.ProjectSummaryResponse;
 import moaon.backend.project.service.ProjectService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -41,8 +41,7 @@ public class ProjectController {
     public ProjectController(
             @Qualifier("projectViewCookieManager") TrackingCookieManager cookieManager,
             ProjectService projectService,
-            ArticleService articleService,
-            MemberService memberService
+            ArticleService articleService
     ) {
         this.cookieManager = cookieManager;
         this.projectService = projectService;
@@ -76,6 +75,13 @@ public class ProjectController {
         ProjectDetailResponse projectDetailResponse = projectService.getById(id);
 
         return ResponseEntity.ok(projectDetailResponse);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<List<ProjectSummaryResponse>> getMyProjects(
+            @CookieValue(value = "token", required = false) String token
+    ) {
+        return ResponseEntity.ok(projectService.getMyProjects(token));
     }
 
     @GetMapping

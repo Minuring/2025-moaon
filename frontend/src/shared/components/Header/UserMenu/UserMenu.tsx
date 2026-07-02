@@ -8,7 +8,10 @@ interface UserMenuItem {
   label: string;
 }
 
-const USER_MENU_ITEMS: UserMenuItem[] = [{ key: "logout", label: "로그아웃" }];
+const USER_MENU_ITEMS: UserMenuItem[] = [
+  { key: "mypage", label: "마이페이지" },
+  { key: "logout", label: "로그아웃" },
+];
 interface UserMenuProps<K> {
   name: string;
   direction?: "up" | "down";

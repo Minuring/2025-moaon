@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { articlesQueries } from "@/apis/articles/articles.queries";
 import type { ArticleFormDataType } from "../types";
 
@@ -12,6 +12,7 @@ export const useArticleSubmission = ({
   initialArticles,
   projectId,
 }: UseArticleSubmissionProps) => {
+  const existingIds = useRef(new Set(initialArticles.map((a) => a.id)));
   const [articles, setArticles] =
     useState<ArticleFormDataType[]>(initialArticles);
   const [editingArticle, setEditingArticle] = useState<
@@ -48,15 +49,17 @@ export const useArticleSubmission = ({
 
   const postArticlesClick = useCallback(async () => {
     await postArticlesMutation(
-      articles.map((article) => ({
-        projectId,
-        title: article.title,
-        summary: article.description,
-        techStacks: article.sector.techStacks,
-        url: article.address,
-        sector: article.sector.value,
-        topics: article.sector.topics,
-      }))
+      articles
+        .filter((article) => !existingIds.current.has(article.id))
+        .map((article) => ({
+          projectId,
+          title: article.title,
+          summary: article.description,
+          techStacks: article.sector.techStacks,
+          url: article.address,
+          sector: article.sector.value,
+          topics: article.sector.topics,
+        }))
     );
   }, [projectId, articles, postArticlesMutation]);
 

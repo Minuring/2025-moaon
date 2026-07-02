@@ -51,3 +51,14 @@ export const NotFoundPage = lazy(
   () =>
     import(/* webpackChunkName: "not-found-page" */ "./notFound/NotFoundPage")
 );
+
+export const MyPage = lazy(
+  () => import(/* webpackChunkName: "my-page" */ "./mypage/MyPage")
+);
+
+export const ArticleRegisterPage = lazy(
+  () =>
+    import(
+      /* webpackChunkName: "article-register-page" */ "./article-register/ArticleRegisterPage"
+    )
+);

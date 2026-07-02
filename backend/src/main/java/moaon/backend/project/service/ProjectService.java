@@ -17,6 +17,7 @@ import moaon.backend.project.dto.PagedProjectResponse;
 import moaon.backend.project.dto.ProjectCreateRequest;
 import moaon.backend.project.dto.ProjectDetailResponse;
 import moaon.backend.project.dto.ProjectQueryCondition;
+import moaon.backend.project.dto.ProjectSummaryResponse;
 import moaon.backend.project.repository.CategoryRepository;
 import moaon.backend.project.repository.ProjectRepository;
 import moaon.backend.techStack.domain.ProjectTechStack;
@@ -68,6 +69,12 @@ public class ProjectService {
         List<ProjectCategory> categories = projectRepository.findProjectCategoriesByProjectId(id);
 
         return ProjectDetailResponse.from(project, stacks, categories);
+    }
+
+    public List<ProjectSummaryResponse> getMyProjects(String token) {
+        Member member = memberService.getUserByToken(token);
+        List<Project> projects = projectRepository.findByAuthor(member);
+        return ProjectSummaryResponse.from(projects);
     }
 
     @Transactional
