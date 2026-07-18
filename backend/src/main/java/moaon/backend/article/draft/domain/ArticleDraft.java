@@ -25,6 +25,8 @@ import moaon.backend.article.domain.Sector;
 import moaon.backend.article.domain.Topic;
 import moaon.backend.global.domain.BaseTimeEntity;
 import moaon.backend.member.domain.Member;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -35,6 +37,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @EqualsAndHashCode(of = "id", callSuper = false)
 public class ArticleDraft extends BaseTimeEntity {
+
+    private static final int MAX_SUMMARY_LENGTH = 255;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,12 +70,14 @@ public class ArticleDraft extends BaseTimeEntity {
 
     @ElementCollection
     @CollectionTable(name = "article_draft_topic", joinColumns = @JoinColumn(name = "article_draft_id"))
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @Enumerated(EnumType.STRING)
     @Column(name = "topic", length = 50)
     private List<Topic> analyzedTopics = new ArrayList<>();
 
     @ElementCollection
     @CollectionTable(name = "article_draft_tech_stack", joinColumns = @JoinColumn(name = "article_draft_id"))
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @Column(name = "tech_stack_name", length = 255)
     private List<String> analyzedTechStacks = new ArrayList<>();
 
@@ -83,7 +89,7 @@ public class ArticleDraft extends BaseTimeEntity {
     }
 
     public void applyAnalysis(String summary, Sector sector, List<Topic> topics, List<String> techStacks) {
-        this.analyzedSummary = summary;
+        this.analyzedSummary = truncateSummary(summary);
         this.analyzedSector = sector;
         this.analyzedTopics = topics;
         this.analyzedTechStacks = techStacks;
@@ -91,5 +97,21 @@ public class ArticleDraft extends BaseTimeEntity {
 
     public boolean isOwnedBy(Member requester) {
         return this.member.equals(requester);
+    }
+
+    private static String truncateSummary(String summary) {
+        if (summary == null) {
+            return "";
+        }
+        String trimmed = summary.strip();
+        if (trimmed.length() <= MAX_SUMMARY_LENGTH) {
+            return trimmed;
+        }
+
+        int lastSentenceEnd = trimmed.lastIndexOf(".", MAX_SUMMARY_LENGTH);
+        if (lastSentenceEnd > 0) {
+            return trimmed.substring(0, lastSentenceEnd + 1);
+        }
+        return trimmed.substring(0, MAX_SUMMARY_LENGTH);
     }
 }

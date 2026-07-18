@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
+import java.util.List;
+import moaon.backend.article.domain.Sector;
+import moaon.backend.article.domain.Topic;
 import moaon.backend.article.draft.domain.ArticleDraft;
 import moaon.backend.fixture.Fixture;
 import moaon.backend.member.domain.Member;
@@ -24,7 +27,7 @@ class ArticleDraftRepositoryTest {
     @Autowired
     private EntityManager entityManager;
 
-    @DisplayName("deleteByCreatedAtBefore: 기준 시각 이전에 생성된 draft만 삭제한다")
+    @DisplayName("deleteByCreatedAtBefore: 분석까지 완료되어 자식 테이블에 행이 있는 draft도 기준 시각 이전이면 함께 삭제한다")
     @Test
     void deleteExpiredDrafts() {
         // given
@@ -32,6 +35,7 @@ class ArticleDraftRepositoryTest {
         entityManager.persist(member);
 
         ArticleDraft oldDraft = new ArticleDraft(member, "https://old.example.com", "old title", "old content");
+        oldDraft.applyAnalysis("분석된 요약", Sector.BE, List.of(Topic.TECHNOLOGY_ADOPTION), List.of("java"));
         ArticleDraft recentDraft = new ArticleDraft(member, "https://recent.example.com", "recent title", "recent content");
         entityManager.persist(oldDraft);
         entityManager.persist(recentDraft);

@@ -18,6 +18,7 @@ CREATE TABLE article_draft_topic (
     topic VARCHAR(50) NOT NULL,
     CONSTRAINT FK_article_draft_topic_draft
         FOREIGN KEY (article_draft_id) REFERENCES article_draft (id)
+        ON DELETE CASCADE
 ) ENGINE = InnoDB;
 
 CREATE TABLE article_draft_tech_stack (
@@ -25,4 +26,5 @@ CREATE TABLE article_draft_tech_stack (
     tech_stack_name VARCHAR(255) NOT NULL,
     CONSTRAINT FK_article_draft_tech_stack_draft
         FOREIGN KEY (article_draft_id) REFERENCES article_draft (id)
+        ON DELETE CASCADE
 ) ENGINE = InnoDB;
