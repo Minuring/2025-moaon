@@ -3,17 +3,16 @@ package moaon.backend.article.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.article.domain.Article;
-import moaon.backend.article.domain.ArticleContent;
 import moaon.backend.article.domain.Sector;
 import moaon.backend.article.domain.Topic;
+import moaon.backend.article.draft.domain.ArticleDraft;
+import moaon.backend.article.draft.repository.ArticleDraftRepository;
 import moaon.backend.article.dto.ArticleCreateRequest;
 import moaon.backend.article.dto.ArticleQueryCondition;
 import moaon.backend.article.dto.ArticleListResponse;
-import moaon.backend.article.repository.ArticleContentRepository;
 import moaon.backend.article.repository.ArticleDBRepository;
 import moaon.backend.article.repository.ArticleSearchResult;
 import moaon.backend.global.exception.custom.CustomException;
@@ -24,7 +23,7 @@ import moaon.backend.project.dto.ProjectArticleQueryCondition;
 import moaon.backend.project.dto.ProjectArticleResponse;
 import moaon.backend.project.repository.ProjectRepository;
 import moaon.backend.article.repository.SearchFacade;
-import moaon.backend.techStack.repository.TechStackRepository;
+import moaon.backend.techStack.service.TechStackResolver;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,9 +35,9 @@ public class ArticleService {
 
     private final SearchFacade searchFacade;
     private final ArticleDBRepository articleDBRepository;
-    private final ArticleContentRepository articleContentRepository;
+    private final ArticleDraftRepository articleDraftRepository;
     private final ProjectRepository projectRepository;
-    private final TechStackRepository techStackRepository;
+    private final TechStackResolver techStackResolver;
 
     public ArticleListResponse getPagedArticles(ArticleQueryCondition queryCondition) {
         ArticleSearchResult result = searchFacade.search(queryCondition);
@@ -71,24 +70,26 @@ public class ArticleService {
             if (!member.equals(project.getAuthor())) {
                 throw new CustomException(ErrorCode.UNAUTHORIZED_MEMBER);
             }
+
+            ArticleDraft draft = articleDraftRepository.findById(request.draftId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_DRAFT_NOT_FOUND));
+            if (!draft.isOwnedBy(member)) {
+                throw new CustomException(ErrorCode.UNAUTHORIZED_MEMBER);
+            }
+
             Article article = new Article(
                     request.title(),
                     request.summary(),
-                    articleContentRepository.findByUrl(request.url().toString())
-                            .map(ArticleContent::getContent)
-                            .orElse(""),
-                    request.url().toString(),
+                    draft.getCrawledContent(),
+                    draft.getUrl(),
                     LocalDateTime.now(),
                     project,
                     Sector.of(request.sector()),
                     request.topics().stream().map(Topic::of).toList(),
-                    request.techStacks().stream()
-                            .map(techStackRepository::findByName)
-                            .filter(Optional::isPresent)
-                            .map(Optional::get)
-                            .toList()
+                    techStackResolver.resolve(request.techStacks())
             );
             Article saved = articleDBRepository.save(article);
+            articleDraftRepository.delete(draft);
             searchFacade.requestIndex(saved.getId());
         }
     }
