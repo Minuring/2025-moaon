@@ -1,5 +1,6 @@
 package moaon.backend.article.draft.controller;
 
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import moaon.backend.article.draft.domain.ArticleDraft;
 import moaon.backend.article.draft.dto.ArticleDraftAnalyzeResponse;
@@ -10,6 +11,7 @@ import moaon.backend.member.service.MemberService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,5 +44,13 @@ public class ArticleDraftController {
         Member member = memberService.getUserByToken(token);
         ArticleDraft draft = articleDraftService.analyze(draftId, member);
         return ResponseEntity.ok(ArticleDraftAnalyzeResponse.from(draft, member));
+    }
+
+    @GetMapping("/quota")
+    public ResponseEntity<Map<String, Integer>> getQuota(
+            @CookieValue(value = "token", required = false) String token
+    ) {
+        Member member = memberService.getUserByToken(token);
+        return ResponseEntity.ok(Map.of("remainingCount", member.getTodayRemainingTokens()));
     }
 }

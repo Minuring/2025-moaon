@@ -124,4 +124,20 @@ class ArticleDraftControllerTest extends BaseApiTest {
         assertThat(response.sector()).isEqualTo("be");
         assertThat(response.techstacks()).isEqualTo("java");
     }
+
+    @DisplayName("GET /articles/drafts/quota: 오늘 남은 분석 가능 횟수를 조회한다")
+    @Test
+    void getQuota() {
+        // given
+        Mockito.when(memberService.getUserByToken(token)).thenReturn(member);
+
+        // when & then
+        RestAssured.given(documentationSpecification).log().all()
+                .cookie("token", token)
+                .filter(document())
+                .when().get("/articles/drafts/quota")
+                .then().log().all()
+                .statusCode(200)
+                .body("remainingCount", org.hamcrest.Matchers.equalTo(20));
+    }
 }
