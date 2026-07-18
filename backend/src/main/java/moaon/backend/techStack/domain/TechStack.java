@@ -36,4 +36,14 @@ public class TechStack {
     public TechStack(String name) {
         this.name = name;
     }
+
+    public static String normalize(String rawName) {
+        String[] words = rawName.strip().toLowerCase().split("[\\s_-]+");
+        StringBuilder result = new StringBuilder(words[0]);
+        for (int i = 1; i < words.length; i++) {
+            result.append(Character.toUpperCase(words[i].charAt(0)))
+                    .append(words[i].substring(1));
+        }
+        return result.toString();
+    }
 }
