@@ -3,7 +3,9 @@ package moaon.backend.article.api.crawl.service.client;
 import java.net.URL;
 import java.util.List;
 import moaon.backend.global.util.EnvLoader;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ContentFinders {
 
     private static final List<ContentFinder> FINDERS = List.of(
