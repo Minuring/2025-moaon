@@ -56,7 +56,7 @@ export const useArticleSubmission = ({
           title: article.title,
           summary: article.description,
           techStacks: article.sector.techStacks,
-          url: article.address,
+          draftId: article.draftId as number,
           sector: article.sector.value,
           topics: article.sector.topics,
         }))

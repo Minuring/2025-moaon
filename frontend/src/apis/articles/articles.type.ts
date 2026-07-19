@@ -38,7 +38,7 @@ export interface PostArticleData {
   title: string;
   summary: string;
   techStacks: TechStackKey[];
-  url: string;
+  draftId: number;
   topics: AllTopicKey[];
   sector: ArticleSectorKey;
 }

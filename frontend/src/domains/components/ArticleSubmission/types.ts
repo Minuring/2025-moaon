@@ -10,6 +10,7 @@ export interface SectorType {
 
 export interface ArticleFormDataType {
   id: string;
+  draftId?: number;
   address: string;
   title: string;
   description: string;
