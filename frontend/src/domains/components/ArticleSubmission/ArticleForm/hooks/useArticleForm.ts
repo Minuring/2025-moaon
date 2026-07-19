@@ -1,7 +1,7 @@
 import { toast } from "@shared/components/Toast/toast";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { articlesQueries } from "@/apis/articles/articles.queries";
+import { articleDraftsQueries } from "@/apis/articleDrafts/articleDrafts.queries";
 import type { ArticleFormDataType, SectorType } from "../../types";
 import {
   type ArticleFormErrors,
@@ -9,7 +9,7 @@ import {
   validateField,
   validateFormData,
 } from "../utils/formUtils";
-import { useCrawlArticleMutation } from "./useCrawlArticleMutation";
+import { useArticleDraftMutation } from "./useArticleDraftMutation";
 
 interface UseArticleFormProps {
   editingData?: ArticleFormDataType;
@@ -30,27 +30,26 @@ export const useArticleForm = ({
   onUpdate,
   onCancel,
 }: UseArticleFormProps) => {
-  const { data: token } = useQuery(articlesQueries.getToken());
-  const [descriptionToken, setDescriptionToken] = useState<number>(
-    () => token?.remainingCount ?? null
-  );
-  const [isButtonClicked, setIsButtonClicked] = useState(true);
+  const { data: quota } = useQuery(articleDraftsQueries.getQuota());
+  const [descriptionToken, setDescriptionToken] = useState<number>(0);
+  const [isTitleLocked, setIsTitleLocked] = useState(true);
+  const [isRestLocked, setIsRestLocked] = useState(true);
   const [formData, setFormData] = useState<ArticleFormDataType>(() =>
     createEmptyFormData()
   );
   const [errors, setErrors] = useState<ArticleFormErrors>({});
 
-  const fetchMetaMutation = useCrawlArticleMutation(setFormData);
+  const { runValidation, isPending } = useArticleDraftMutation(setFormData);
   const isFormValid = useMemo(() => {
     const validationErrors = validateFormData(formData);
     return Object.values(validationErrors).every((error) => !error);
   }, [formData]);
 
   useEffect(() => {
-    if (token?.remainingCount !== undefined) {
-      setDescriptionToken(token.remainingCount);
+    if (quota?.remainingCount !== undefined) {
+      setDescriptionToken(quota.remainingCount);
     }
-  }, [token?.remainingCount]);
+  }, [quota?.remainingCount]);
 
   useEffect(() => {
     if (!editingData) {
@@ -58,7 +57,8 @@ export const useArticleForm = ({
     }
 
     setFormData(editingData);
-    setIsButtonClicked(false);
+    setIsTitleLocked(false);
+    setIsRestLocked(false);
   }, [editingData]);
 
   const handleMetaDataFetchButtonClick = useCallback(async () => {
@@ -67,23 +67,19 @@ export const useArticleForm = ({
       return;
     }
 
-    const previous = descriptionToken;
-    setDescriptionToken((prev) => Math.max(0, prev - 1));
+    const remainingCount = await runValidation(formData.address, {
+      onTitleUnlocked: () => setIsTitleLocked(false),
+      onAnalysisSettled: () => setIsRestLocked(false),
+      onDraftCreationFailed: () => {
+        setIsTitleLocked(true);
+        setIsRestLocked(true);
+      },
+    });
 
-    try {
-      const result = await fetchMetaMutation.mutateAsync(
-        formData.address,
-        (condition: boolean) => {
-          setIsButtonClicked(condition);
-        }
-      );
-      if (result && typeof result.remainingCount === "number") {
-        setDescriptionToken(result.remainingCount);
-      }
-    } catch {
-      setDescriptionToken(previous);
+    if (remainingCount !== undefined) {
+      setDescriptionToken(remainingCount);
     }
-  }, [formData.address, fetchMetaMutation, descriptionToken]);
+  }, [formData.address, runValidation]);
 
   const updateFormFieldData = useCallback(
     <K extends keyof ArticleFormDataType>(
@@ -186,26 +182,30 @@ export const useArticleForm = ({
     if (onUpdate && editingData) {
       onUpdate(formData);
       setFormData(createEmptyFormData());
-      setIsButtonClicked(true);
+      setIsTitleLocked(true);
+      setIsRestLocked(true);
       return;
     }
 
     onSubmit(formData);
     setFormData(createEmptyFormData());
-    setIsButtonClicked(true);
+    setIsTitleLocked(true);
+    setIsRestLocked(true);
     setErrors({});
   }, [formData, onSubmit, onUpdate, editingData]);
 
   const handleCancel = useCallback(() => {
     onCancel();
     setFormData(createEmptyFormData());
-    setIsButtonClicked(true);
+    setIsTitleLocked(true);
+    setIsRestLocked(true);
     setErrors({});
   }, [onCancel]);
 
   return {
     formData,
-    isButtonClicked,
+    isTitleLocked,
+    isRestLocked,
     errors,
     isFormValid,
     descriptionToken,
@@ -214,6 +214,6 @@ export const useArticleForm = ({
     handleMetaDataFetchButtonClick,
     handleSubmit,
     handleCancel,
-    loading: fetchMetaMutation.isPending,
+    loading: isPending,
   };
 };

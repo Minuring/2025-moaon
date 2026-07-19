@@ -22,7 +22,8 @@ function ArticleForm({
 }: ArticleFormProps) {
   const {
     formData,
-    isButtonClicked,
+    isTitleLocked,
+    isRestLocked,
     errors,
     isFormValid,
     descriptionToken,
@@ -62,7 +63,7 @@ function ArticleForm({
           value={formData.title}
           onChange={(e) => updateFormFieldData("title", e.target.value)}
           errorMessage={errors.title}
-          disabled={isButtonClicked}
+          disabled={isTitleLocked}
         />
         <TextareaFormField
           title="아티클 한 줄 요약"
@@ -71,7 +72,7 @@ function ArticleForm({
           value={formData.description}
           onChange={(e) => updateFormFieldData("description", e.target.value)}
           errorMessage={errors.description}
-          disabled={isButtonClicked}
+          disabled={isRestLocked}
           descriptionToken={descriptionToken}
         />
         <SectorFormField
@@ -84,7 +85,7 @@ function ArticleForm({
             techStacks: errors.techStacks,
             topics: errors.topics,
           }}
-          readOnly={isButtonClicked}
+          readOnly={isRestLocked}
         />
       </S.FormFieldList>
       <S.ArticleButtonGroup>
