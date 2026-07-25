@@ -12,8 +12,6 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
 
 import moaon.backend.api.BaseApiTest;
@@ -21,6 +19,8 @@ import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.ArticleSortType;
 import moaon.backend.article.domain.Sector;
 import moaon.backend.article.domain.Topic;
+import moaon.backend.article.draft.domain.ArticleDraft;
+import moaon.backend.article.draft.repository.ArticleDraftRepository;
 import moaon.backend.article.dto.ArticleCreateRequest;
 import moaon.backend.article.dto.ArticleDto;
 import moaon.backend.article.dto.ArticleListResponse;
@@ -54,6 +54,9 @@ public class ArticleApiTest extends BaseApiTest {
     protected RepositoryHelper repositoryHelper;
 
     @Autowired
+    private ArticleDraftRepository articleDraftRepository;
+
+    @Autowired
     private JwtTokenService jwtTokenService;
 
     @MockitoBean
@@ -75,7 +78,7 @@ public class ArticleApiTest extends BaseApiTest {
 
     @DisplayName("POST /articles: 아티클 저장 API")
     @Test
-    void save() throws MalformedURLException {
+    void save() {
         // given
         Project savedProject = repositoryHelper.save(
                 new ProjectFixtureBuilder()
@@ -87,14 +90,16 @@ public class ArticleApiTest extends BaseApiTest {
 
         repositoryHelper.save(new TechStack("react"));
 
+        ArticleDraft draft = articleDraftRepository.save(
+                new ArticleDraft(member, "https://tattered-drive-af3.notion.site/fork-ts-checker-webpack-plugin", "크롤링 제목", "크롤링 본문")
+        );
+
         ArticleCreateRequest articleCreateRequest = ArticleCreateRequest.builder()
                 .projectId(savedProject.getId())
                 .title("fork-ts-checker-webpack-plugin")
                 .summary("webpack-plugin 도입")
                 .techStacks(List.of("react"))
-                .url(
-                        new URL("https://tattered-drive-af3.notion.site/fork-ts-checker-webpack-plugin-2514b5223064806e96cceac24ff9dafd")
-                )
+                .draftId(draft.getId())
                 .sector("fe")
                 .topics(List.of("etc"))
                 .build();
@@ -286,7 +291,7 @@ public class ArticleApiTest extends BaseApiTest {
                 fieldWithPath("[].title").description("아티클 제목"),
                 fieldWithPath("[].summary").description("아티클 요약"),
                 fieldWithPath("[].techStacks").description("기술 스택 목록"),
-                fieldWithPath("[].url").description("아티클 URL"),
+                fieldWithPath("[].draftId").description("아티클 초안 ID"),
                 fieldWithPath("[].sector").description("직군"),
                 fieldWithPath("[].topics").description("아티클 주제")
         );
