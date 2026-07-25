@@ -74,11 +74,10 @@ class ArticleDraftControllerTest extends BaseApiTest {
                 .thenReturn(new FinderCrawlResult("크롤링된 제목", "크롤링된 본문입니다."));
 
         // when
-        ArticleDraftCreateResponse response = RestAssured.given(documentationSpecification).log().all()
+        ArticleDraftCreateResponse response = RestAssured.given().log().all()
                 .contentType(ContentType.JSON)
                 .cookie("token", token)
                 .queryParam("url", "https://example.tistory.com/1")
-                .filter(document())
                 .when().post("/articles/drafts")
                 .then().log().all()
                 .statusCode(201)
@@ -109,11 +108,10 @@ class ArticleDraftControllerTest extends BaseApiTest {
                 ));
 
         // when
-        ArticleDraftAnalyzeResponse response = RestAssured.given(documentationSpecification).log().all()
+        ArticleDraftAnalyzeResponse response = RestAssured.given().log().all()
                 .contentType(ContentType.JSON)
                 .cookie("token", token)
                 .pathParam("draftId", savedDraft.getId())
-                .filter(document())
                 .when().post("/articles/drafts/{draftId}/analyze")
                 .then().log().all()
                 .statusCode(200)
@@ -132,9 +130,8 @@ class ArticleDraftControllerTest extends BaseApiTest {
         Mockito.when(memberService.getUserByToken(token)).thenReturn(member);
 
         // when & then
-        RestAssured.given(documentationSpecification).log().all()
+        RestAssured.given().log().all()
                 .cookie("token", token)
-                .filter(document())
                 .when().get("/articles/drafts/quota")
                 .then().log().all()
                 .statusCode(200)

@@ -2,11 +2,6 @@ package moaon.backend.api.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -42,9 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
-import org.springframework.restdocs.payload.RequestFieldsSnippet;
-import org.springframework.restdocs.payload.ResponseFieldsSnippet;
-import org.springframework.restdocs.request.QueryParametersSnippet;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @Import({RepositoryHelper.class, QueryDslConfig.class})
@@ -105,11 +97,10 @@ public class ArticleApiTest extends BaseApiTest {
                 .build();
 
         // when
-        RestAssured.given(documentationSpecification).log().all()
+        RestAssured.given().log().all()
                 .contentType(ContentType.JSON)
                 .cookie("token", token)
                 .body(List.of(articleCreateRequest))
-                .filter(document(articleCreateRequestFields()))
                 .when().post("/articles")
                 .then().log().all()
                 .statusCode(201);
@@ -230,7 +221,7 @@ public class ArticleApiTest extends BaseApiTest {
                         3, 2, ArticleSortType.CLICKS));
 
         // when
-        ArticleListResponse actualResponse = RestAssured.given(documentationSpecification).log().all()
+        ArticleListResponse actualResponse = RestAssured.given().log().all()
                 .queryParams("sort", "clicks")
                 .queryParams("search", filteredSearch)
                 .queryParams("sector", filteredSector.getName())
@@ -238,7 +229,6 @@ public class ArticleApiTest extends BaseApiTest {
                 .queryParams("techStacks", List.of(filteredTechStack.getName()))
                 .queryParams("limit", 2)
                 .queryParams("cursor", "5_6")
-                .filter(document(articleQueryParameters(), articleResponseFields()))
                 .when().get("/articles")
                 .then().log().all()
                 .statusCode(200)
@@ -257,9 +247,8 @@ public class ArticleApiTest extends BaseApiTest {
         Article article = repositoryHelper.save(new ArticleFixtureBuilder().build());
 
         // when 첫 클릭 - 기본 응답 + 클릭수 증가 + 쿠키 설정
-        ValidatableResponse firstResponse = RestAssured.given(documentationSpecification).log().all()
+        ValidatableResponse firstResponse = RestAssured.given().log().all()
                 .pathParam("id", article.getId())
-                .filter(document())
                 .when().post("/articles/{id}/clicks")
                 .then().log().all()
                 .statusCode(200);
@@ -283,51 +272,5 @@ public class ArticleApiTest extends BaseApiTest {
 
         // then 클릭수 미증가 검증
         assertThat(secondResult.getClicks()).isEqualTo(1);
-    }
-
-    private RequestFieldsSnippet articleCreateRequestFields() {
-        return requestFields(
-                fieldWithPath("[].projectId").description("프로젝트 ID"),
-                fieldWithPath("[].title").description("아티클 제목"),
-                fieldWithPath("[].summary").description("아티클 요약"),
-                fieldWithPath("[].techStacks").description("기술 스택 목록"),
-                fieldWithPath("[].draftId").description("아티클 초안 ID"),
-                fieldWithPath("[].sector").description("직군"),
-                fieldWithPath("[].topics").description("아티클 주제")
-        );
-    }
-
-    private static QueryParametersSnippet articleQueryParameters() {
-        return queryParameters(
-                parameterWithName("sort").description("정렬 기준 (clicks, createdAt)").optional(),
-                parameterWithName("search").description("검색어").optional(),
-                parameterWithName("sector").description("직군").optional(),
-                parameterWithName("topics").description("아티클 주제").optional(),
-                parameterWithName("techStacks").description("기술 스택 목록").optional(),
-                parameterWithName("limit").description("요청 데이터 개수 | Max: 100"),
-                parameterWithName("cursor").description("이전 요청의 마지막 데이터 식별자 (정렬기준_id)").optional()
-        );
-    }
-
-    private static ResponseFieldsSnippet articleResponseFields() {
-        return responseFields(
-                fieldWithPath("contents").description("아티클 목록"),
-                fieldWithPath("contents[].id").description("아티클 ID"),
-                fieldWithPath("contents[].projectId").description("프로젝트 ID"),
-                fieldWithPath("contents[].projectTitle").description("프로젝트 제목"),
-                fieldWithPath("contents[].clicks").description("클릭수"),
-                fieldWithPath("contents[].title").description("아티클 제목"),
-                fieldWithPath("contents[].summary").description("아티클 요약"),
-                fieldWithPath("contents[].techStacks").description("기술 스택 목록"),
-                fieldWithPath("contents[].url").description("아티클 URL"),
-                fieldWithPath("contents[].sector").description("직군"),
-                fieldWithPath("contents[].topics").description("아티클 주제"),
-                fieldWithPath("contents[].createdAt").description("생성일시"),
-                fieldWithPath("contents[].highlightTitle").description("제목 하이라이트"),
-                fieldWithPath("contents[].highlightSummary").description("요약 하이라이트"),
-                fieldWithPath("totalCount").description("필터링 걸린 데이터의 전체 개수"),
-                fieldWithPath("hasNext").description("다음 페이지 존재 여부"),
-                fieldWithPath("nextCursor").description("다음 요청 커서")
-        );
     }
 }

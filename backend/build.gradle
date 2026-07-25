@@ -2,7 +2,6 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.3'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'org.asciidoctor.jvm.convert' version '4.0.2'
 }
 
 group = 'moaon'
@@ -18,11 +17,6 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
-    asciidoctorExt
-}
-
-ext {
-    snippetsDir = file('build/generated-snippets')
 }
 
 repositories {
@@ -68,10 +62,6 @@ dependencies {
     testImplementation "org.testcontainers:mysql"
     testImplementation "org.springframework.boot:spring-boot-testcontainers"
 
-    // rest docs
-    testImplementation 'org.springframework.restdocs:spring-restdocs-restassured'
-    asciidoctorExt 'org.springframework.restdocs:spring-restdocs-asciidoctor'
-
     // flyway
     implementation 'org.flywaydb:flyway-mysql'
 
@@ -115,33 +105,4 @@ sourceSets {
 
 tasks.named('test', Test) {
     useJUnitPlatform()
-    outputs.dir snippetsDir
-
-    doFirst {
-        delete snippetsDir
-    }
-}
-
-asciidoctor {
-    configurations 'asciidoctorExt'
-    dependsOn test
-    inputs.dir snippetsDir
-    outputDir = file('src/main/resources/static/docs')
-    sources {
-        include('**/index.adoc')
-    }
-    baseDirFollowsSourceFile()
-    doFirst {
-        delete outputDir
-    }
-}
-
-bootJar {
-    from('${asciidoctor.outputDir}') {
-        into 'static/docs'
-    }
-}
-
-tasks.named('build') {
-    dependsOn asciidoctor
 }

@@ -5,12 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -47,9 +41,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
-import org.springframework.restdocs.payload.RequestFieldsSnippet;
-import org.springframework.restdocs.payload.ResponseFieldsSnippet;
-import org.springframework.restdocs.request.QueryParametersSnippet;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @Import({RepositoryHelper.class, QueryDslConfig.class})
@@ -116,11 +107,10 @@ public class ProjectApiTest extends BaseApiTest {
         when(memberService.getUserByToken(any())).thenReturn(member);
 
         // when
-        ProjectCreateResponse response = RestAssured.given(documentationSpecification).log().all()
+        ProjectCreateResponse response = RestAssured.given().log().all()
                 .contentType(ContentType.JSON)
                 .cookie("token", token)
                 .body(projectCreateRequest)
-                .filter(document(projectCreateRequestFields(), projectCreateResponseFields()))
                 .when().post("/projects")
                 .then().log().all()
                 .statusCode(201)
@@ -137,9 +127,8 @@ public class ProjectApiTest extends BaseApiTest {
         Project project = repositoryHelper.save(new ProjectFixtureBuilder().build());
 
         // when & then 첫 조회 - 기본 응답 + 조회수 증가 + 쿠키 설정
-        ValidatableResponse firstResponse = RestAssured.given(documentationSpecification).log().all()
+        ValidatableResponse firstResponse = RestAssured.given().log().all()
                 .pathParam("id", project.getId())
-                .filter(document(projectDetailResponseFields()))
                 .when().get("/projects/{id}")
                 .then().log().all()
                 .statusCode(200);
@@ -228,13 +217,12 @@ public class ProjectApiTest extends BaseApiTest {
         );
 
         // when
-        PagedProjectResponse actualResponses = RestAssured.given(documentationSpecification).log().all()
+        PagedProjectResponse actualResponses = RestAssured.given().log().all()
                 .queryParams("search", filteredSearch)
                 .queryParams("sort", "views")
                 .queryParams("categories", List.of(filteredCategory.getName()))
                 .queryParams("techStacks", List.of(filteredTechStack.getName()))
                 .queryParams("limit", 2)
-                .filter(document(projectQueryParameters(), pagedProjectResponseFields()))
                 .when().get("/projects")
                 .then().log().all()
                 .statusCode(200)
@@ -307,10 +295,9 @@ public class ProjectApiTest extends BaseApiTest {
                 ));
 
         // whenr
-        ProjectArticleResponse actualResponse = RestAssured.given(documentationSpecification).log().all()
+        ProjectArticleResponse actualResponse = RestAssured.given().log().all()
                 .queryParams("sector", filteredSector.getName())
                 .queryParams("search", filteredSearch)
-                .filter(document(projectArticlesResponseFields(), projectArticleQueryParameters()))
                 .when().get("/projects/{id}/articles", targetProject.getId())
                 .then().log().all()
                 .statusCode(200)
@@ -335,98 +322,6 @@ public class ProjectApiTest extends BaseApiTest {
                                 filteredArticle2.getId(),
                                 filteredArticle3.getId()
                         )
-        );
-    }
-
-    private RequestFieldsSnippet projectCreateRequestFields() {
-        return requestFields(
-                fieldWithPath("title").description("프로젝트 제목"),
-                fieldWithPath("summary").description("프로젝트 요약"),
-                fieldWithPath("description").description("프로젝트 상세 설명"),
-                fieldWithPath("techStacks").description("사용된 기술 스택 목록"),
-                fieldWithPath("categories").description("프로젝트 카테고리 목록"),
-                fieldWithPath("githubUrl").description("GitHub 저장소 URL").optional(),
-                fieldWithPath("productionUrl").description("배포 URL").optional(),
-                fieldWithPath("imageKeys").description("프로젝트 이미지 URL 목록").optional()
-        );
-    }
-
-    private ResponseFieldsSnippet projectCreateResponseFields() {
-        return responseFields(
-                fieldWithPath("id").description("생성된 프로젝트 ID")
-        );
-    }
-
-    private ResponseFieldsSnippet projectDetailResponseFields() {
-        return responseFields(
-                fieldWithPath("id").description("프로젝트 ID"),
-                fieldWithPath("authorId").description("작성자 ID"),
-                fieldWithPath("title").description("프로젝트 제목"),
-                fieldWithPath("summary").description("프로젝트 요약"),
-                fieldWithPath("description").description("프로젝트 상세 설명"),
-                fieldWithPath("techStacks").description("사용된 기술 스택 목록"),
-                fieldWithPath("categories").description("프로젝트 카테고리 목록"),
-                fieldWithPath("imageUrls").description("프로젝트 이미지 URL 목록").optional(),
-                fieldWithPath("isLoved").description("현재 사용자의 좋아요 여부"),
-                fieldWithPath("loves").description("좋아요 수"),
-                fieldWithPath("views").description("조회수"),
-                fieldWithPath("createdAt").description("생성일시"),
-                fieldWithPath("githubUrl").description("GitHub 저장소 URL").optional(),
-                fieldWithPath("productionUrl").description("배포 URL").optional()
-        );
-    }
-
-    private ResponseFieldsSnippet pagedProjectResponseFields() {
-        return responseFields(
-                fieldWithPath("contents").description("프로젝트 목록"),
-                fieldWithPath("contents[].id").description("프로젝트 ID"),
-                fieldWithPath("contents[].title").description("프로젝트 제목"),
-                fieldWithPath("contents[].summary").description("프로젝트 소개"),
-                fieldWithPath("contents[].techStacks").description("기술 스택 목록"),
-                fieldWithPath("contents[].thumbnailUrl").description("썸네일 이미지 URL").optional(),
-                fieldWithPath("contents[].isLoved").description("현재 사용자의 좋아요 여부"),
-                fieldWithPath("contents[].loves").description("좋아요 수"),
-                fieldWithPath("contents[].views").description("조회수"),
-                fieldWithPath("totalCount").description("필터링 걸린 데이터의 전체 개수"),
-                fieldWithPath("hasNext").description("다음 페이지 존재 여부"),
-                fieldWithPath("nextCursor").description("다음 요청 커서")
-        );
-    }
-
-    private QueryParametersSnippet projectQueryParameters() {
-        return queryParameters(
-                parameterWithName("search").description("검색어").optional(),
-                parameterWithName("sort").description("정렬 기준 (views, loves, createdAt, articleCount)").optional(),
-                parameterWithName("categories").description("카테고리 목록").optional(),
-                parameterWithName("techStacks").description("기술 스택 목록").optional(),
-                parameterWithName("limit").description("요청 데이터 개수 | Max: 100"),
-                parameterWithName("cursor").description("이전 요청의 마지막 데이터 식별자 (정렬기준_id)").optional()
-        );
-    }
-
-    private ResponseFieldsSnippet projectArticlesResponseFields() {
-        return responseFields(
-                subsectionWithPath("counts").description("직군별 아티클 개수 목록"),
-                fieldWithPath("counts[].sector").description("직군"),
-                fieldWithPath("counts[].count").description("해당 직군 아티클 개수"),
-
-                subsectionWithPath("articles").description("아티클 데이터 목록"),
-                fieldWithPath("articles[].id").description("아티클 ID"),
-                fieldWithPath("articles[].title").description("아티클 제목"),
-                fieldWithPath("articles[].summary").description("아티클 요약"),
-                fieldWithPath("articles[].clicks").description("아티클 클릭수"),
-                fieldWithPath("articles[].techStacks").description("기술 스택 목록").optional(),
-                fieldWithPath("articles[].url").description("아티클 URL"),
-                fieldWithPath("articles[].sector").description("직군"),
-                fieldWithPath("articles[].topics").description("아티클 주제"),
-                fieldWithPath("articles[].createdAt").description("생성일시")
-        );
-    }
-
-    private QueryParametersSnippet projectArticleQueryParameters() {
-        return queryParameters(
-                parameterWithName("search").description("검색어").optional(),
-                parameterWithName("sector").description("직군").optional()
         );
     }
 }
