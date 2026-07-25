@@ -4,8 +4,12 @@
 ### VS Code ###
 .vscode/
 
+### macOS ###
+.DS_Store
+
 ### Coding Agent ###
 CLAUDE.md
+docs/superpowers/
 
 ### Load Test ###
 load-test/
