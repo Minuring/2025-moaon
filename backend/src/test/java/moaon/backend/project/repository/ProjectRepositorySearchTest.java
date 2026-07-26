@@ -7,7 +7,7 @@ import java.util.List;
 import moaon.backend.fixture.ProjectFixtureBuilder;
 import moaon.backend.fixture.ProjectQueryConditionFixtureBuilder;
 import moaon.backend.fixture.RepositoryHelper;
-import moaon.backend.project.dao.ProjectDao;
+import moaon.backend.project.ProjectDao;
 import moaon.backend.project.domain.Project;
 import moaon.backend.project.dto.ProjectQueryCondition;
 import org.junit.jupiter.api.DisplayName;

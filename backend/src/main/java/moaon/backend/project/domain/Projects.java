@@ -3,7 +3,7 @@ package moaon.backend.project.domain;
 import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import moaon.backend.global.cursor.Cursor;
+import moaon.backend.project.ProjectCursor;
 
 @RequiredArgsConstructor
 @Getter
@@ -25,7 +25,7 @@ public class Projects {
         return projects;
     }
 
-    public Cursor<?> getNextCursor(ProjectSortType sortType) {
+    public ProjectCursor<?> getNextCursor(ProjectSortType sortType) {
         if (hasNext()) {
             List<Project> projectsToReturn = getProjectsToReturn();
             Project lastProject = projectsToReturn.getLast();

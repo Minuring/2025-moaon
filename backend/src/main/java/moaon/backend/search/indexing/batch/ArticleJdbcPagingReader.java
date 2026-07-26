@@ -26,11 +26,11 @@ public class ArticleJdbcPagingReader implements ItemReader<ArticleDocument>, Ite
     private static final String LAST_ID_KEY = "lastId";
 
     private static final String BASE_QUERY = """
-            SELECT a.id, a.title, a.summary, acs.content, a.article_url, a.clicks, a.created_at, a.sector,
+            SELECT a.id, a.title, a.summary, ac.content, a.article_url, a.clicks, a.created_at, a.sector,
                    p.id AS project_id, p.title AS project_title
             FROM article a
             INNER JOIN project p ON p.id = a.project_id
-            LEFT JOIN article_content_separated acs ON acs.id = a.id
+            LEFT JOIN article_content ac ON ac.id = a.id
             WHERE a.id > :lastId
             ORDER BY a.id ASC
             LIMIT :pageSize

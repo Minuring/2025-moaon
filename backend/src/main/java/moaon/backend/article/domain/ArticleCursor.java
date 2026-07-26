@@ -6,10 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
-import moaon.backend.global.parser.DoubleParser;
-import moaon.backend.global.parser.IntegerParser;
-import moaon.backend.global.parser.LocalDateTimeParser;
-import moaon.backend.global.parser.LongParser;
+import moaon.backend.global.util.Parsers;
 
 @Getter
 @EqualsAndHashCode
@@ -30,7 +27,7 @@ public class ArticleCursor {
 
         String[] split = rawCursor.split("_");
         this.sortValue = split[0];
-        this.lastId = new LongParser().parse(split[1]);
+        this.lastId = Parsers.parseLong(split[1]);
     }
 
     public <T> T getSortValueAs(Function<Object, T> mapper) {
@@ -38,19 +35,19 @@ public class ArticleCursor {
     }
 
     public LocalDateTime getSortValueAsLocalDateTime() {
-        return new LocalDateTimeParser().parse(sortValue.toString());
+        return Parsers.parseLocalDateTime(sortValue.toString());
     }
 
     public int getSortValueAsInt() {
-        return new IntegerParser().parse(sortValue.toString());
+        return Parsers.parseInt(sortValue.toString());
     }
 
     public double getSortValueAsDouble() {
-        return new DoubleParser().parse(sortValue.toString());
+        return Parsers.parseDouble(sortValue.toString());
     }
 
     public long getSortValueAsLong() {
-        return new LongParser().parse(sortValue.toString());
+        return Parsers.parseLong(sortValue.toString());
     }
 
     @Override

@@ -5,8 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import moaon.backend.article.domain.Sector;
 import moaon.backend.article.domain.Topic;
+import moaon.backend.article.draft.ArticleDraft;
 import moaon.backend.fixture.Fixture;
-import moaon.backend.member.domain.Member;
+import moaon.backend.member.Member;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

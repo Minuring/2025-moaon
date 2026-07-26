@@ -5,7 +5,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.Sector;
-import moaon.backend.member.domain.Member;
+import moaon.backend.member.Member;
 import moaon.backend.project.domain.Category;
 import moaon.backend.project.domain.Project;
 import moaon.backend.techStack.domain.TechStack;

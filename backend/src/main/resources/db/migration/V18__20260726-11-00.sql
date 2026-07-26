@@ -1,0 +1,1 @@
+RENAME TABLE article_content_separated TO article_content;

@@ -1,6 +1,6 @@
 package moaon.backend.global.config;
 
-import moaon.backend.global.filter.HttpLoggingFilter;
+import moaon.backend.global.HttpLoggingFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

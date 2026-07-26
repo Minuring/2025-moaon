@@ -1,6 +1,6 @@
 package moaon.backend.member.dto;
 
-import moaon.backend.member.domain.Member;
+import moaon.backend.member.Member;
 
 public record LoginStatusResponse(
         boolean isLoggedIn,

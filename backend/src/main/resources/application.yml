@@ -86,6 +86,6 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 3
         minimumNumberOfCalls: 5
         ignore-exceptions:
-          - moaon.backend.article.api.crawl.exception.AiNoCostException
-          - moaon.backend.article.api.crawl.exception.AiSummaryFailedException
+          - moaon.backend.article.draft.client.AiNoCostException
+          - moaon.backend.article.draft.client.AiSummaryFailedException
 # (최소 5개 이상의) 최근 10개 호출에서 실패율이 50%를 넘으면, 60초간 Open함.

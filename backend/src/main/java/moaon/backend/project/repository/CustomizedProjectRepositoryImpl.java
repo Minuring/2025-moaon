@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import moaon.backend.global.domain.SearchKeyword;
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
-import moaon.backend.project.dao.ProjectDao;
+import moaon.backend.project.ProjectDao;
 import moaon.backend.project.domain.Project;
 import moaon.backend.project.domain.ProjectCategory;
 import moaon.backend.project.domain.Projects;

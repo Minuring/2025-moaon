@@ -3,20 +3,20 @@ package moaon.backend.article.draft.service;
 import java.net.URL;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import moaon.backend.article.api.crawl.dto.FinderCrawlResult;
-import moaon.backend.article.api.crawl.service.client.AiSummarization;
-import moaon.backend.article.api.crawl.service.client.AiSummarizer;
-import moaon.backend.article.api.crawl.service.client.ContentFinder;
-import moaon.backend.article.api.crawl.service.client.ContentFinders;
-import moaon.backend.article.draft.domain.ArticleDraft;
-import moaon.backend.article.draft.repository.ArticleDraftRepository;
+import moaon.backend.article.draft.client.FinderCrawlResult;
+import moaon.backend.article.draft.client.AiSummarization;
+import moaon.backend.article.draft.client.AiSummarizer;
+import moaon.backend.article.draft.client.ContentFinder;
+import moaon.backend.article.draft.client.ContentFinders;
+import moaon.backend.article.draft.ArticleDraft;
+import moaon.backend.article.draft.ArticleDraftRepository;
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
-import moaon.backend.global.parser.URLParser;
-import moaon.backend.member.domain.Member;
+import moaon.backend.global.util.Parsers;
+import moaon.backend.member.Member;
 import moaon.backend.member.service.MemberService;
 import moaon.backend.techStack.domain.TechStack;
-import moaon.backend.techStack.service.TechStackResolver;
+import moaon.backend.techStack.TechStackResolver;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +33,7 @@ public class ArticleDraftService {
 
     @Transactional
     public ArticleDraft create(String url, Member member) {
-        URL parsedUrl = URLParser.parse(url);
+        URL parsedUrl = Parsers.parseURL(url);
         ContentFinder finder = contentFinders.getFinder(parsedUrl);
         FinderCrawlResult crawlResult = finder.crawl(parsedUrl);
 

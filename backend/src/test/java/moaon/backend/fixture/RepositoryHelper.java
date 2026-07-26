@@ -2,14 +2,14 @@ package moaon.backend.fixture;
 
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.repository.ArticleDBRepository;
-import moaon.backend.member.domain.Member;
-import moaon.backend.member.repository.MemberRepository;
+import moaon.backend.member.Member;
+import moaon.backend.member.MemberRepository;
 import moaon.backend.project.domain.Category;
 import moaon.backend.project.domain.Project;
 import moaon.backend.project.repository.CategoryRepository;
 import moaon.backend.project.repository.ProjectRepository;
 import moaon.backend.techStack.domain.TechStack;
-import moaon.backend.techStack.repository.TechStackRepository;
+import moaon.backend.techStack.TechStackRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestComponent;
 

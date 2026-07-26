@@ -1,6 +1,6 @@
 package moaon.backend.article.draft.dto;
 
-import moaon.backend.article.draft.domain.ArticleDraft;
+import moaon.backend.article.draft.ArticleDraft;
 
 public record ArticleDraftCreateResponse(
         Long draftId,

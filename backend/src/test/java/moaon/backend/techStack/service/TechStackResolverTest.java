@@ -5,8 +5,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import moaon.backend.techStack.TechStackRepository;
+import moaon.backend.techStack.TechStackResolver;
 import moaon.backend.techStack.domain.TechStack;
-import moaon.backend.techStack.repository.TechStackRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

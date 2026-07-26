@@ -2,8 +2,8 @@ package moaon.backend.article.draft.dto;
 
 import java.util.stream.Collectors;
 import moaon.backend.article.domain.Topic;
-import moaon.backend.article.draft.domain.ArticleDraft;
-import moaon.backend.member.domain.Member;
+import moaon.backend.article.draft.ArticleDraft;
+import moaon.backend.member.Member;
 
 public record ArticleDraftAnalyzeResponse(
         String summary,

@@ -62,7 +62,8 @@ public class Article extends BaseTimeEntity {
     private String summary;
 
     @OneToOne(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private ArticleContentSeparated contentSeparated;
+    @Getter(AccessLevel.NONE)
+    private ArticleContent content;
 
     @Column(nullable = false, length = 500)
     private String articleUrl;
@@ -109,7 +110,7 @@ public class Article extends BaseTimeEntity {
     ) {
         this.title = title;
         this.summary = summary;
-        this.contentSeparated = new ArticleContentSeparated(this, content);
+        this.content = new ArticleContent(this, content);
         this.articleUrl = articleUrl;
         this.clicks = 0;
         this.createdAt = createdAt;
@@ -138,9 +139,9 @@ public class Article extends BaseTimeEntity {
     }
 
     public String getContent() {
-        if (contentSeparated == null) {
+        if (content == null) {
             return "";
         }
-        return contentSeparated.getContent();
+        return content.getContent();
     }
 }

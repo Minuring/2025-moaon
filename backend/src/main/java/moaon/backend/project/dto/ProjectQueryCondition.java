@@ -1,8 +1,8 @@
 package moaon.backend.project.dto;
 
 import java.util.List;
-import moaon.backend.global.cursor.Cursor;
 import moaon.backend.global.domain.SearchKeyword;
+import moaon.backend.project.ProjectCursor;
 import moaon.backend.project.domain.ProjectSortType;
 import org.springframework.util.CollectionUtils;
 
@@ -12,7 +12,7 @@ public record ProjectQueryCondition(
         List<String> techStackNames,
         ProjectSortType projectSortType,
         int limit,
-        Cursor<?> cursor
+        ProjectCursor<?> cursor
 ) {
 
     public static ProjectQueryCondition of(

@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
-import moaon.backend.member.domain.Member;
+import moaon.backend.member.Member;
 import moaon.backend.member.dto.LoginStatusResponse;
-import moaon.backend.member.repository.MemberRepository;
+import moaon.backend.member.MemberRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

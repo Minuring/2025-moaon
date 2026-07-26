@@ -8,8 +8,7 @@ import moaon.backend.article.domain.ArticleCursor;
 import moaon.backend.article.dto.ArticleDto;
 import moaon.backend.article.dto.ArticleQueryCondition;
 import moaon.backend.article.repository.ArticleSearchResult;
-import moaon.backend.global.parser.LongParser;
-import moaon.backend.global.parser.Parser;
+import moaon.backend.global.util.Parsers;
 import moaon.backend.project.domain.Project;
 import moaon.backend.search.log.domain.SearchHitLog;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
@@ -24,7 +23,6 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class ArticleDocumentRepository {
 
-    private static final Parser<Long> ID_PARSER = new LongParser();
     private static final IndexCoordinates ARTICLE_ALIAS = IndexCoordinates.of("articles");
 
     private final ElasticsearchOperations ops;
@@ -79,7 +77,7 @@ public class ArticleDocumentRepository {
     private ArticleCursor buildCursor(SearchHits<ArticleDocument> searchHits) {
         List<Object> sortValues = searchHits.getSearchHits().getLast().getSortValues();
         Object sortValue = sortValues.get(0);
-        Long id = ID_PARSER.parse(sortValues.get(1).toString());
+        Long id = Parsers.parseLong(sortValues.get(1).toString());
         return new ArticleCursor(sortValue, id);
     }
 }

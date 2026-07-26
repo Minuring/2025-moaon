@@ -8,7 +8,7 @@ import moaon.backend.api.BaseApiTest;
 import moaon.backend.fixture.Fixture;
 import moaon.backend.fixture.RepositoryHelper;
 import moaon.backend.global.config.QueryDslConfig;
-import moaon.backend.member.domain.Member;
+import moaon.backend.member.Member;
 import moaon.backend.member.dto.LoginStatusResponse;
 import moaon.backend.member.service.JwtTokenService;
 import org.junit.jupiter.api.DisplayName;

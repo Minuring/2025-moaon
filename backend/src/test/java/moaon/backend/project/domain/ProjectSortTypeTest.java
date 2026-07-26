@@ -4,10 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.time.LocalDateTime;
-import moaon.backend.global.cursor.CreatedAtProjectCursor;
-import moaon.backend.global.cursor.Cursor;
-import moaon.backend.global.cursor.LoveProjectCursor;
-import moaon.backend.global.cursor.ViewProjectCursor;
+import moaon.backend.project.ProjectCursor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -26,7 +23,7 @@ class ProjectSortTypeTest {
         assertThat(actual).isEqualTo(expected);
     }
 
-    @DisplayName("CreatedAtProjectCursor 를 만든다.")
+    @DisplayName("CREATED_AT 기준 커서를 만든다.")
     @Test
     void toCreatedAtProjectCursor() {
         // given
@@ -34,17 +31,16 @@ class ProjectSortTypeTest {
         ProjectSortType sortBy = ProjectSortType.CREATED_AT;
 
         // when
-        Cursor<?> actual = sortBy.toCursor(cursor);
+        ProjectCursor<?> actual = sortBy.toCursor(cursor);
 
         // then
         assertAll(
-                () -> assertThat(actual).isInstanceOf(CreatedAtProjectCursor.class),
                 () -> assertThat(actual.getLastId()).isEqualTo(12345),
                 () -> assertThat(actual.getSortValue()).isEqualTo(LocalDateTime.of(2024, 7, 31, 10, 0))
         );
     }
 
-    @DisplayName("CreatedAtProjectCursor 를 만든다.")
+    @DisplayName("LOVES 기준 커서를 만든다.")
     @Test
     void toLoveProjectCursor() {
         // given
@@ -52,17 +48,16 @@ class ProjectSortTypeTest {
         ProjectSortType sortBy = ProjectSortType.LOVES;
 
         // when
-        Cursor<?> actual = sortBy.toCursor(cursor);
+        ProjectCursor<?> actual = sortBy.toCursor(cursor);
 
         // then
         assertAll(
-                () -> assertThat(actual).isInstanceOf(LoveProjectCursor.class),
                 () -> assertThat(actual.getLastId()).isEqualTo(12345),
                 () -> assertThat(actual.getSortValue()).isEqualTo(1500)
         );
     }
 
-    @DisplayName("CreatedAtProjectCursor 를 만든다.")
+    @DisplayName("VIEWS 기준 커서를 만든다.")
     @Test
     void toViewProjectCursor() {
         // given
@@ -70,11 +65,10 @@ class ProjectSortTypeTest {
         ProjectSortType sortBy = ProjectSortType.VIEWS;
 
         // when
-        Cursor<?> actual = sortBy.toCursor(cursor);
+        ProjectCursor<?> actual = sortBy.toCursor(cursor);
 
         // then
         assertAll(
-                () -> assertThat(actual).isInstanceOf(ViewProjectCursor.class),
                 () -> assertThat(actual.getLastId()).isEqualTo(12345),
                 () -> assertThat(actual.getSortValue()).isEqualTo(1500)
         );

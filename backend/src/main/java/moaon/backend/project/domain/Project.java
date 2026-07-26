@@ -30,7 +30,7 @@ import moaon.backend.article.domain.Sector;
 import moaon.backend.global.domain.BaseTimeEntity;
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
-import moaon.backend.member.domain.Member;
+import moaon.backend.member.Member;
 import moaon.backend.techStack.domain.ProjectTechStack;
 import moaon.backend.techStack.domain.TechStack;
 import org.hibernate.annotations.BatchSize;

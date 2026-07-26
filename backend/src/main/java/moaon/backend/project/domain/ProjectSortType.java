@@ -2,45 +2,39 @@ package moaon.backend.project.domain;
 
 import java.util.Arrays;
 import java.util.function.Function;
-import moaon.backend.global.cursor.ArticleCountProjectCursor;
-import moaon.backend.global.cursor.CreatedAtProjectCursor;
-import moaon.backend.global.cursor.Cursor;
-import moaon.backend.global.cursor.LoveProjectCursor;
-import moaon.backend.global.cursor.ViewProjectCursor;
-import moaon.backend.global.parser.CursorParser;
-import moaon.backend.global.parser.IntegerParser;
-import moaon.backend.global.parser.LocalDateTimeParser;
+import moaon.backend.global.util.Parsers;
+import moaon.backend.project.ProjectCursor;
 
 public enum ProjectSortType {
 
     CREATED_AT("createdAt",
-            cursor -> CursorParser.toCursor(cursor, new LocalDateTimeParser(), CreatedAtProjectCursor::new),
-            project -> new CreatedAtProjectCursor(project.getCreatedAt(), project.getId())
+            cursor -> Parsers.toCursor(cursor, Parsers::parseLocalDateTime),
+            project -> new ProjectCursor<>(project.getCreatedAt(), project.getId())
     ),
 
     VIEWS("views",
-            cursor -> CursorParser.toCursor(cursor, new IntegerParser(), ViewProjectCursor::new),
-            project -> new ViewProjectCursor(project.getViews(), project.getId())
+            cursor -> Parsers.toCursor(cursor, Parsers::parseInt),
+            project -> new ProjectCursor<>(project.getViews(), project.getId())
     ),
 
     LOVES("loves",
-            cursor -> CursorParser.toCursor(cursor, new IntegerParser(), LoveProjectCursor::new),
-            project -> new LoveProjectCursor(project.getLoveCount(), project.getId())
+            cursor -> Parsers.toCursor(cursor, Parsers::parseInt),
+            project -> new ProjectCursor<>(project.getLoveCount(), project.getId())
     ),
 
     ARTICLE_COUNT("articleCount",
-            cursor -> CursorParser.toCursor(cursor, new IntegerParser(), ArticleCountProjectCursor::new),
-            project -> new ArticleCountProjectCursor(project.getArticles().size(), project.getId())
+            cursor -> Parsers.toCursor(cursor, Parsers::parseInt),
+            project -> new ProjectCursor<>(project.getArticles().size(), project.getId())
     );
 
     private final String sortType;
-    private final Function<String, Cursor<?>> cursorFactory;
-    private final Function<Project, Cursor<?>> projectToCursorFactory;
+    private final Function<String, ProjectCursor<?>> cursorFactory;
+    private final Function<Project, ProjectCursor<?>> projectToCursorFactory;
 
     ProjectSortType(
             String sortType,
-            Function<String, Cursor<?>> cursorFactory,
-            Function<Project, Cursor<?>> projectToCursorFactory
+            Function<String, ProjectCursor<?>> cursorFactory,
+            Function<Project, ProjectCursor<?>> projectToCursorFactory
     ) {
         this.sortType = sortType;
         this.cursorFactory = cursorFactory;
@@ -54,11 +48,11 @@ public enum ProjectSortType {
                 .orElse(CREATED_AT);
     }
 
-    public Cursor<?> toCursor(String cursor) {
+    public ProjectCursor<?> toCursor(String cursor) {
         return cursorFactory.apply(cursor);
     }
 
-    public Cursor<?> toCursor(Project project) {
+    public ProjectCursor<?> toCursor(Project project) {
         return projectToCursorFactory.apply(project);
     }
 }

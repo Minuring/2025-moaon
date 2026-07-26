@@ -3,7 +3,7 @@ package moaon.backend.article.draft.service;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import moaon.backend.article.draft.repository.ArticleDraftRepository;
+import moaon.backend.article.draft.ArticleDraftRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
