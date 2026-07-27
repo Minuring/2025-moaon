@@ -8,11 +8,9 @@ import moaon.backend.article.dto.ArticleCreateRequest;
 import moaon.backend.article.dto.ArticleQueryCondition;
 import moaon.backend.article.dto.ArticleListResponse;
 import moaon.backend.article.dto.ArticleSearchRequest;
-import moaon.backend.global.cookie.AccessHistory;
-import moaon.backend.global.cookie.TrackingCookieManager;
+import moaon.backend.global.CountCooldownCookieManager;
 import moaon.backend.member.Member;
 import moaon.backend.member.service.MemberService;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -29,12 +27,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/articles")
 public class ArticleController {
 
-    private final TrackingCookieManager cookieManager;
+    private static final String CLICK_COOKIE_NAME_PREFIX = "clicked_articles_";
+    private static final String CLICK_COOKIE_PATH = "/articles";
+
+    private final CountCooldownCookieManager cookieManager;
     private final ArticleService articleService;
     private final MemberService memberService;
 
     public ArticleController(
-            @Qualifier("articleClickCookieManager") TrackingCookieManager cookieManager,
+            CountCooldownCookieManager cookieManager,
             ArticleService articleService,
             MemberService memberService
     ) {
@@ -65,10 +66,9 @@ public class ArticleController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        AccessHistory accessHistory = cookieManager.extractViewedMap(request);
-        if (cookieManager.isCountIncreasable(id, accessHistory)) {
+        if (cookieManager.isCountIncreasable(CLICK_COOKIE_NAME_PREFIX, id, request)) {
             articleService.increaseClicksCount(id);
-            cookieManager.createOrUpdateCookie(id, accessHistory, response);
+            cookieManager.markAsCounted(CLICK_COOKIE_NAME_PREFIX, CLICK_COOKIE_PATH, id, response);
         }
         return ResponseEntity.ok().build();
     }

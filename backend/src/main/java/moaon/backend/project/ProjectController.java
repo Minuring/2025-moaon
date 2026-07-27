@@ -6,8 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import java.util.List;
 import moaon.backend.article.ArticleService;
-import moaon.backend.global.cookie.AccessHistory;
-import moaon.backend.global.cookie.TrackingCookieManager;
+import moaon.backend.global.CountCooldownCookieManager;
 import moaon.backend.project.dto.PagedProjectResponse;
 import moaon.backend.project.dto.ProjectArticleQueryCondition;
 import moaon.backend.project.dto.ProjectArticleResponse;
@@ -16,7 +15,6 @@ import moaon.backend.project.dto.ProjectCreateResponse;
 import moaon.backend.project.dto.ProjectDetailResponse;
 import moaon.backend.project.dto.ProjectQueryCondition;
 import moaon.backend.project.dto.ProjectSummaryResponse;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -33,12 +31,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/projects")
 public class ProjectController {
 
-    private final TrackingCookieManager cookieManager;
+    private static final String VIEW_COOKIE_NAME_PREFIX = "viewed_projects_";
+    private static final String VIEW_COOKIE_PATH = "/projects";
+
+    private final CountCooldownCookieManager cookieManager;
     private final ProjectService projectService;
     private final ArticleService articleService;
 
     public ProjectController(
-            @Qualifier("projectViewCookieManager") TrackingCookieManager cookieManager,
+            CountCooldownCookieManager cookieManager,
             ProjectService projectService,
             ArticleService articleService
     ) {
@@ -64,10 +65,9 @@ public class ProjectController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        AccessHistory accessHistory = cookieManager.extractViewedMap(request);
-        if (cookieManager.isCountIncreasable(id, accessHistory)) {
+        if (cookieManager.isCountIncreasable(VIEW_COOKIE_NAME_PREFIX, id, request)) {
             ProjectDetailResponse projectDetailResponse = projectService.increaseViewsCount(id);
-            cookieManager.createOrUpdateCookie(id, accessHistory, response);
+            cookieManager.markAsCounted(VIEW_COOKIE_NAME_PREFIX, VIEW_COOKIE_PATH, id, response);
             return ResponseEntity.ok(projectDetailResponse);
         }
 

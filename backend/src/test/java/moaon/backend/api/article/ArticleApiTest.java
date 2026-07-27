@@ -253,7 +253,8 @@ public class ArticleApiTest extends BaseApiTest {
                 .then().log().all()
                 .statusCode(200);
 
-        String cookie = firstResponse.extract().cookie("clicked_articles");
+        String cookieName = "clicked_articles_" + article.getId();
+        String cookie = firstResponse.extract().cookie(cookieName);
         // then 클릭수 및 쿠키 검증을 위해 서비스에서 직접 조회
         Article firstResult = repositoryHelper.getById(article.getId());
         assertAll("아티클 클릭수 증가 및 쿠키 설정 검증",
@@ -263,7 +264,7 @@ public class ArticleApiTest extends BaseApiTest {
 
         // when 쿠키와 함께 재클릭 - 클릭수 미증가 확인
         RestAssured.given().log().all()
-                .cookie("clicked_articles", cookie)
+                .cookie(cookieName, cookie)
                 .pathParam("id", article.getId())
                 .when().post("/articles/{id}/clicks")
                 .then().log().all()

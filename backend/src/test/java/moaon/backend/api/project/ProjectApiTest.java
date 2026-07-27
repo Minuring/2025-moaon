@@ -134,7 +134,8 @@ public class ProjectApiTest extends BaseApiTest {
                 .statusCode(200);
 
         ProjectDetailResponse firstResult = firstResponse.extract().as(ProjectDetailResponse.class);
-        String cookie = firstResponse.extract().cookie("viewed_projects");
+        String cookieName = "viewed_projects_" + project.getId();
+        String cookie = firstResponse.extract().cookie(cookieName);
 
         // then 기본 응답 검증
         assertAll("프로젝트 기본 정보 및 첫 조회 검증",
@@ -150,7 +151,7 @@ public class ProjectApiTest extends BaseApiTest {
 
         // when & then 쿠키와 함께 재조회 - 조회수 미증가 확인
         ProjectDetailResponse secondResult = RestAssured.given().log().all()
-                .cookie("viewed_projects", cookie)
+                .cookie(cookieName, cookie)
                 .pathParam("id", project.getId())
                 .when().get("/projects/{id}")
                 .then().log().all()
