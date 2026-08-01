@@ -8,10 +8,11 @@ import moaon.backend.project.domain.Project;
 import moaon.backend.project.dto.ProjectArticleQueryCondition;
 import moaon.backend.search.log.service.SearchLogCaptureAssembler;
 import moaon.backend.search.log.service.SearchLogService;
-import moaon.backend.search.indexing.outbox.IndexEventWorker;
 import moaon.backend.search.indexing.outbox.IndexEvent;
 import moaon.backend.search.indexing.outbox.IndexEvent.Action;
 import moaon.backend.search.indexing.outbox.IndexEventRepository;
+import moaon.backend.search.indexing.outbox.IndexRequestedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -22,7 +23,7 @@ public class SearchFacadeImpl implements SearchFacade {
     private final IndexEventRepository indexEventRepository;
     private final SearchLogService searchLogService;
     private final SearchLogCaptureAssembler searchLogCaptureAssembler;
-    private final IndexEventWorker indexEventWorker;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public ArticleSearchResult search(ArticleQueryCondition condition) {
@@ -40,12 +41,12 @@ public class SearchFacadeImpl implements SearchFacade {
     @Override
     public void requestIndex(Long articleId) {
         indexEventRepository.merge(new IndexEvent(articleId, Action.INDEXING));
-        indexEventWorker.doIndexOneAsync(articleId);
+        eventPublisher.publishEvent(new IndexRequestedEvent(articleId));
     }
 
     @Override
     public void requestDelete(Long articleId) {
         indexEventRepository.merge(new IndexEvent(articleId, Action.DELETED));
-        indexEventWorker.doIndexOneAsync(articleId);
+        eventPublisher.publishEvent(new IndexRequestedEvent(articleId));
     }
 }

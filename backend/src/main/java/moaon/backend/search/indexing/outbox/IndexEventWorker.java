@@ -42,48 +42,56 @@ public class IndexEventWorker {
         }
 
         for (IndexEvent e : events) {
-            syncEvent(e);
-            indexEventRepository.markAsProcessed(e);
+            try {
+                syncEvent(e);
+                indexEventRepository.markAsProcessed(e);
+            } catch (Exception ex) {
+                logSyncFailure(e, ex);
+            }
         }
     }
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void doIndexOneAsync(Long entityId) {
+    public void doIndexOneAsync(IndexRequestedEvent event) {
         if (isEsClusterNotHealthy()) {
             return;
         }
 
-        indexEventRepository.findByEntityId(entityId)
+        indexEventRepository.findByEntityId(event.entityId())
+                .filter(e -> e.getProcessedRevision() < e.getRequiredRevision())
                 .ifPresent(e -> {
-                    syncEvent(e);
-                    indexEventRepository.markAsProcessed(e);
+                    try {
+                        syncEvent(e);
+                        indexEventRepository.markAsProcessed(e);
+                    } catch (Exception ex) {
+                        logSyncFailure(e, ex);
+                    }
                 });
     }
 
-    private void syncEvent(IndexEvent e) {
-        try {
-            if (e.getAction() == Action.DELETED) {
-                delete(e);
-                return;
-            }
-
-            Article article = articleRepository.findById(e.getEntityId()).orElse(null);
-            if (article == null) {
-                delete(e);
-                return;
-            }
-
-            if (e.getAction() == Action.INDEXING) {
-                upsert(article);
-            }
-
-        } catch (Exception ex) {
-            log.warn("Index sync failed. entityId={}, action={}, processedRevision={}, requiredRevision={}, msg={}",
-                    e.getEntityId(), e.getAction(), e.getProcessedRevision(), e.getRequiredRevision(),
-                    ex.getMessage());
+    private void syncEvent(IndexEvent e) throws IOException {
+        if (e.getAction() == Action.DELETED) {
+            delete(e);
+            return;
         }
+
+        Article article = articleRepository.findById(e.getEntityId()).orElse(null);
+        if (article == null) {
+            delete(e);
+            return;
+        }
+
+        if (e.getAction() == Action.INDEXING) {
+            upsert(article);
+        }
+    }
+
+    private void logSyncFailure(IndexEvent e, Exception ex) {
+        log.warn("Index sync failed. entityId={}, action={}, processedRevision={}, requiredRevision={}, msg={}",
+                e.getEntityId(), e.getAction(), e.getProcessedRevision(), e.getRequiredRevision(),
+                ex.getMessage());
     }
 
     private void delete(final IndexEvent e) throws IOException {
