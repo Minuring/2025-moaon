@@ -20,9 +20,6 @@
         <li class="nav-item">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-nori" type="button">Nori 사전</button>
         </li>
-        <li class="nav-item">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-case" type="button">Search Log</button>
-        </li>
     </ul>
 
     <div class="tab-content">
@@ -75,32 +72,6 @@
                 </thead>
                 <tbody id="nori-table-body"></tbody>
             </table>
-        </div>
-
-        <!-- ── Search Log 탭 ── -->
-        <div class="tab-pane fade" id="tab-case" role="tabpanel">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0">Search Log 대시보드</h5>
-            </div>
-            <div id="case-alert" class="mb-3"></div>
-            <table class="table table-hover table-sm">
-                <thead class="table-light">
-                <tr>
-                    <th>검색어</th>
-                    <th>응답(ms)</th>
-                    <th>결과수</th>
-                    <th>title</th>
-                    <th>summary</th>
-                    <th>content only</th>
-                    <th>동의어↑</th>
-                    <th>2페이지↑</th>
-                    <th>검색일시</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody id="case-table-body"></tbody>
-            </table>
-            <nav id="case-pagination"></nav>
         </div>
 
     </div>
@@ -371,53 +342,6 @@ function noriDelete(id) {
         .then(r => { if (!r.ok) throw new Error(); })
         .then(() => { noriLoad(); showAlert('nori-alert', '삭제되었습니다.', 'success'); })
         .catch(() => showAlert('nori-alert', '삭제에 실패했습니다.', 'danger'));
-}
-
-// ── Search Log ────────────────────────────────────
-let casePage = 0;
-document.getElementById('adminTabs').querySelector('[data-bs-target="#tab-case"]')
-    .addEventListener('shown.bs.tab', () => caseLoad(0));
-
-function caseLoad(page) {
-    casePage = page;
-    const params = new URLSearchParams({page, size: 20});
-    fetch('/admin/api/search-logs?' + params)
-        .then(r => r.json()).then(caseRender)
-        .catch(() => showAlert('case-alert', '목록 로드 실패', 'danger'));
-}
-
-function caseRender(page) {
-    const tbody = document.getElementById('case-table-body');
-    if (!page.content.length) {
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">로그가 없습니다.</td></tr>';
-        document.getElementById('case-pagination').innerHTML = '';
-        return;
-    }
-    tbody.innerHTML = page.content.map(c => {
-        const fm = c.fieldMatchStats;
-        const fmt = (n) => fm ? n : '-';
-        return `
-        <tr>
-            <td>${escapeHtml(c.query)}</td>
-            <td>${c.queryTimeMs}</td>
-            <td>${c.resultCount}</td>
-            <td>${fmt(fm ? fm.titleCount : 0)}</td>
-            <td>${fmt(fm ? fm.summaryCount : 0)}</td>
-            <td>${fmt(fm ? fm.contentCount : 0)}</td>
-            <td>${c.synonymMatchCount != null ? c.synonymMatchCount : '-'}</td>
-            <td>${c.hasCursor ? '●' : ''}</td>
-            <td>${c.searchedAt ? c.searchedAt.substring(0, 16).replace('T', ' ') : ''}</td>
-            <td><a href="/admin/search-logs/${c.id}" class="btn btn-sm btn-outline-primary">상세</a></td>
-        </tr>`;
-    }).join('');
-
-    if (page.totalPages <= 1) { document.getElementById('case-pagination').innerHTML = ''; return; }
-    const pages = Array.from({length: page.totalPages}, (_, i) =>
-        `<li class="page-item ${i === casePage ? 'active' : ''}">
-            <button class="page-link" onclick="caseLoad(${i})">${i + 1}</button>
-         </li>`).join('');
-    document.getElementById('case-pagination').innerHTML =
-        `<ul class="pagination pagination-sm">${pages}</ul>`;
 }
 
 // 첫 탭(Synonym) 초기 로드

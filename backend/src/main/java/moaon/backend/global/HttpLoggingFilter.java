@@ -1,16 +1,13 @@
 package moaon.backend.global;
 
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
 
 @Slf4j
 @Component
@@ -34,48 +31,32 @@ public class HttpLoggingFilter implements Filter {
             return;
         }
 
-        doRequestLogging(httpServletRequest);
-
         long startTime = System.currentTimeMillis();
         try {
             chain.doFilter(request, response);
             long responseTime = System.currentTimeMillis() - startTime;
             int status = httpServletResponse.getStatus();
-            doResponseLogging(httpServletRequest, status, responseTime);
+            doAccessLogging(httpServletRequest, status, responseTime);
         } finally {
             MDC.clear();
         }
     }
 
-    private void doRequestLogging(HttpServletRequest httpServletRequest) {
+    private void doAccessLogging(HttpServletRequest httpServletRequest, int status, long responseTime) {
         String method = httpServletRequest.getMethod();
         String requestURI = httpServletRequest.getRequestURI();
         String queryString = httpServletRequest.getQueryString();
         String fullPath = requestURI + (queryString != null ? "?" + queryString : "");
 
-        MDC.put(LOG_TYPE, "http_request");
-        MDC.put(HTTP_METHOD, method);
-        MDC.put(REQUEST_PATH, fullPath);
-
-        log.info("[REQUEST] {} {}",
-                method,
-                fullPath
-        );
-    }
-
-    private void doResponseLogging(HttpServletRequest httpServletRequest, int status, long responseTime) {
-        String method = httpServletRequest.getMethod();
-        String requestURI = httpServletRequest.getRequestURI();
-        String queryString = httpServletRequest.getQueryString();
-        String fullPath = requestURI + (queryString != null ? "?" + queryString : "");
-
-        MDC.put(LOG_TYPE, "http_response");
+        MDC.put(LOG_TYPE, "http_access");
         MDC.put(HTTP_METHOD, method);
         MDC.put(REQUEST_PATH, fullPath);
         MDC.put(HTTP_STATUS, String.valueOf(status));
         MDC.put(RESPONSE_TIME_MS, String.valueOf(responseTime));
 
-        log.info("[RESPONSE] Status: {} | Time(ms): {}",
+        log.info("{} {} - {} ({}ms)",
+                method,
+                fullPath,
                 status,
                 responseTime
         );

@@ -6,8 +6,6 @@ import moaon.backend.article.repository.ArticleSearchResult;
 import moaon.backend.article.repository.SearchFacade;
 import moaon.backend.project.domain.Project;
 import moaon.backend.project.dto.ProjectArticleQueryCondition;
-import moaon.backend.search.log.service.SearchLogCaptureAssembler;
-import moaon.backend.search.log.service.SearchLogService;
 import moaon.backend.search.indexing.outbox.IndexEvent;
 import moaon.backend.search.indexing.outbox.IndexEvent.Action;
 import moaon.backend.search.indexing.outbox.IndexEventRepository;
@@ -21,16 +19,11 @@ public class SearchFacadeImpl implements SearchFacade {
 
     private final ArticleDocumentRepository articleDocumentRepository;
     private final IndexEventRepository indexEventRepository;
-    private final SearchLogService searchLogService;
-    private final SearchLogCaptureAssembler searchLogCaptureAssembler;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public ArticleSearchResult search(ArticleQueryCondition condition) {
-        SearchWithLog raw = articleDocumentRepository.search(condition);
-        searchLogCaptureAssembler.assemble(raw.hitLogs(), raw.result().totalCount(), condition, raw.queryTimeMs())
-                .ifPresent(searchLogService::saveAsync);
-        return raw.result();
+        return articleDocumentRepository.search(condition);
     }
 
     @Override

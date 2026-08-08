@@ -6,7 +6,8 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
+import moaon.backend.search.ElasticsearchClientConfig;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.IndexOperations;
 import org.springframework.data.elasticsearch.core.document.Document;
@@ -24,7 +25,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 
 @Repository
-@RequiredArgsConstructor
 public class ArticleIndexRepository {
 
     private static final BulkOptions BULK_OPTIONS_TIMEOUT = BulkOptions.builder()
@@ -33,6 +33,14 @@ public class ArticleIndexRepository {
 
     private final ElasticsearchOperations ops;
     private final ElasticsearchClient esClient;
+
+    public ArticleIndexRepository(
+            @Qualifier(ElasticsearchClientConfig.BULK_OPERATIONS) ElasticsearchOperations ops,
+            @Qualifier(ElasticsearchClientConfig.BULK_CLIENT) ElasticsearchClient esClient
+    ) {
+        this.ops = ops;
+        this.esClient = esClient;
+    }
 
     public boolean createIndex(IndexCoordinates indexWrapper, Class<?> documentClass) {
         IndexOperations iops = ops.indexOps(indexWrapper);

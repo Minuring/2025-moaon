@@ -5,7 +5,6 @@ import moaon.backend.article.domain.ArticleCursor;
 import moaon.backend.article.domain.ArticleSortType;
 import moaon.backend.article.dto.ArticleDto;
 import moaon.backend.article.repository.ArticleSearchResult;
-import moaon.backend.search.query.SearchWithLog;
 
 public class FakeArticleSearchResult {
 
@@ -18,16 +17,6 @@ public class FakeArticleSearchResult {
         boolean hasNext = articles.size() == limit;
         ArticleCursor cursor = hasNext ? generateCursor(articles, sortType) : null;
         return new ArticleSearchResult(articles, totalCount, hasNext, cursor);
-    }
-
-    public static SearchWithLog createWithLog(
-            List<ArticleDto> articles,
-            long totalCount,
-            int limit,
-            ArticleSortType sortType
-    ) {
-        ArticleSearchResult result = create(articles, totalCount, limit, sortType);
-        return new SearchWithLog(result, List.of(), 0);
     }
 
     public static ArticleSearchResult empty() {

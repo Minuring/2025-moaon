@@ -48,8 +48,6 @@ public enum ErrorCode {
 
     INVALID_CURSOR_FORMAT("CURSOR-001", "커서 파라미터 형식이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
 
-    SEARCH_LOG_NOT_FOUND("SEARCH-LOG-001", "검색 로그를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
-
     INVALID_SEARCH_KEYWORD_LENGTH(
             "SEARCH-001",
             String.format("검색어는 %d자 이하여야 합니다.", SearchKeyword.getMaxLength()),

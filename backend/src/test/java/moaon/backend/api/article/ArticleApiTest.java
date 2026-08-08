@@ -216,7 +216,7 @@ public class ArticleApiTest extends BaseApiTest {
         );
 
         Mockito.when(articleDocumentRepository.search(Mockito.any()))
-                .thenReturn(FakeArticleSearchResult.createWithLog(
+                .thenReturn(FakeArticleSearchResult.create(
                         List.of(ArticleDto.from(articleClickRankFirst), ArticleDto.from(articleClickRankSecond)),
                         3, 2, ArticleSortType.CLICKS));
 

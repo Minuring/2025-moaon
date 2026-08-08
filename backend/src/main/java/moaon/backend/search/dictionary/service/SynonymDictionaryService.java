@@ -5,20 +5,20 @@ import co.elastic.clients.elasticsearch.indices.ReloadSearchAnalyzersResponse;
 import co.elastic.clients.elasticsearch.synonyms.SynonymRule;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import moaon.backend.search.ElasticsearchClientConfig;
 import moaon.backend.search.dictionary.domain.SynonymDictionaryEntry;
 import moaon.backend.search.dictionary.dto.ReloadResponse;
 import moaon.backend.search.dictionary.dto.SynonymEntry;
 import moaon.backend.search.dictionary.repository.SynonymDictionaryRepository;
 import moaon.backend.search.query.ArticleDocument;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
 @Slf4j
 public class SynonymDictionaryService {
 
@@ -28,6 +28,14 @@ public class SynonymDictionaryService {
 
     private final SynonymDictionaryRepository synonymDictionaryRepository;
     private final ElasticsearchClient elasticsearchClient;
+
+    public SynonymDictionaryService(
+            SynonymDictionaryRepository synonymDictionaryRepository,
+            @Qualifier(ElasticsearchClientConfig.BULK_CLIENT) ElasticsearchClient elasticsearchClient
+    ) {
+        this.synonymDictionaryRepository = synonymDictionaryRepository;
+        this.elasticsearchClient = elasticsearchClient;
+    }
 
     public List<SynonymEntry> findAll() {
         return synonymDictionaryRepository.findAll().stream()

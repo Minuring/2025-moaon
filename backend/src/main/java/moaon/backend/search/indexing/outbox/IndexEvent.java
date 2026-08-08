@@ -47,6 +47,10 @@ public class IndexEvent {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public boolean isProcessed() {
+        return processedRevision == requiredRevision;
+    }
+
     public enum Action {
         INDEXING,
         DELETED

@@ -1,6 +1,5 @@
 package moaon.backend.search.query;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -10,11 +9,9 @@ import moaon.backend.article.dto.ArticleQueryCondition;
 import moaon.backend.article.repository.ArticleSearchResult;
 import moaon.backend.global.util.Parsers;
 import moaon.backend.project.domain.Project;
-import moaon.backend.search.log.domain.SearchHitLog;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.RefreshPolicy;
-import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.stereotype.Repository;
@@ -27,24 +24,12 @@ public class ArticleDocumentRepository {
 
     private final ElasticsearchOperations ops;
 
-    public SearchWithLog search(ArticleQueryCondition condition) {
-        long startTime = System.currentTimeMillis();
+    public ArticleSearchResult search(ArticleQueryCondition condition) {
         NativeQuery esArticleQuery = new ESArticleQueryBuilder()
                 .withQueryCondition(condition)
                 .build();
         SearchHits<ArticleDocument> searchHits = ops.search(esArticleQuery, ArticleDocument.class, ARTICLE_ALIAS);
-        int queryTimeMs = (int) (System.currentTimeMillis() - startTime);
-
-        ArticleSearchResult articleSearchResult = wrapSearchHits(condition, searchHits);
-
-        List<SearchHitLog> hitLogs = new ArrayList<>();
-        int rank = 1;
-        for (SearchHit<ArticleDocument> hit : searchHits) {
-            hitLogs.add(SearchHitLog.of(rank++, hit.getContent().getId(), hit.getContent().getTitle(),
-                    hit.getScore(), hit.getHighlightFields()));
-        }
-
-        return new SearchWithLog(articleSearchResult, hitLogs, queryTimeMs);
+        return wrapSearchHits(condition, searchHits);
     }
 
     public ArticleSearchResult searchInProject(Project project, ArticleQueryCondition condition) {

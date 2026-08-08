@@ -2,18 +2,18 @@ package moaon.backend.search.dictionary.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import moaon.backend.search.ElasticsearchClientConfig;
 import moaon.backend.search.dictionary.domain.NoriDictionaryEntry;
 import moaon.backend.search.dictionary.dto.ReloadResponse;
 import moaon.backend.search.dictionary.dto.NoriEntry;
 import moaon.backend.search.dictionary.repository.NoriDictionaryRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
 @Slf4j
 public class NoriDictionaryService {
 
@@ -21,6 +21,14 @@ public class NoriDictionaryService {
 
     private final NoriDictionaryRepository noriDictionaryRepository;
     private final ElasticsearchClient elasticsearchClient;
+
+    public NoriDictionaryService(
+            NoriDictionaryRepository noriDictionaryRepository,
+            @Qualifier(ElasticsearchClientConfig.BULK_CLIENT) ElasticsearchClient elasticsearchClient
+    ) {
+        this.noriDictionaryRepository = noriDictionaryRepository;
+        this.elasticsearchClient = elasticsearchClient;
+    }
 
     public List<NoriEntry> findAll() {
         return noriDictionaryRepository.findAll().stream()
