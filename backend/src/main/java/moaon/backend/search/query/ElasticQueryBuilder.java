@@ -3,11 +3,6 @@ package moaon.backend.search.query;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import jakarta.annotation.Nullable;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-
 import moaon.backend.article.domain.ArticleCursor;
 import moaon.backend.article.domain.ArticleSortType;
 import moaon.backend.article.domain.Sector;
@@ -26,7 +21,11 @@ import org.springframework.data.elasticsearch.core.query.highlight.Highlight;
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightField;
 import org.springframework.data.elasticsearch.core.query.highlight.HighlightParameters;
 
-public class ESArticleQueryBuilder {
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
+class ElasticQueryBuilder {
 
     private static final HighlightQuery highlightQuery = new HighlightQuery(
             new Highlight(HighlightParameters.builder()
@@ -48,56 +47,56 @@ public class ESArticleQueryBuilder {
     private List<Object> searchAfter;
     private long timeoutMillis = 100L;
 
-    public ESArticleQueryBuilder withIds(List<Long> ids) {
+    public ElasticQueryBuilder withIds(List<Long> ids) {
         if (ids != null && !ids.isEmpty()) {
             filters.add(createIdsQuery(ids));
         }
         return this;
     }
 
-    public ESArticleQueryBuilder withTextSearch(SearchKeyword searchKeyword) {
+    public ElasticQueryBuilder withTextSearch(SearchKeyword searchKeyword) {
         if (searchKeyword != null && searchKeyword.hasValue()) {
             musts.add(createTextMatchQuery(searchKeyword));
         }
         return this;
     }
 
-    public ESArticleQueryBuilder withSector(Sector sector) {
+    public ElasticQueryBuilder withSector(Sector sector) {
         if (sector != null) {
             filters.add(createSectorQuery(sector));
         }
         return this;
     }
 
-    public ESArticleQueryBuilder withTopicsAndMatch(List<Topic> topics) {
+    public ElasticQueryBuilder withTopicsAndMatch(List<Topic> topics) {
         if (topics != null && !topics.isEmpty()) {
             filters.add(createTopicsAndQuery(topics));
         }
         return this;
     }
 
-    public ESArticleQueryBuilder withTopicsOrMatch(List<Topic> topics) {
+    public ElasticQueryBuilder withTopicsOrMatch(List<Topic> topics) {
         if (topics != null && !topics.isEmpty()) {
             filters.add(createTopicsOrQuery(topics));
         }
         return this;
     }
 
-    public ESArticleQueryBuilder withTechStacksAndMatch(List<String> techStackNames) {
+    public ElasticQueryBuilder withTechStacksAndMatch(List<String> techStackNames) {
         if (techStackNames != null && !techStackNames.isEmpty()) {
             filters.add(createTechStacksAndQuery(techStackNames));
         }
         return this;
     }
 
-    public ESArticleQueryBuilder withTechStacksOrMatch(List<String> techStackNames) {
+    public ElasticQueryBuilder withTechStacksOrMatch(List<String> techStackNames) {
         if (techStackNames != null && !techStackNames.isEmpty()) {
             filters.add(createTechStacksOrQuery(techStackNames));
         }
         return this;
     }
 
-    public ESArticleQueryBuilder withPagination(int limit, @Nullable ArticleCursor cursor, ArticleSortType sortType) {
+    public ElasticQueryBuilder withPagination(int limit, @Nullable ArticleCursor cursor, ArticleSortType sortType) {
         if (cursor == null) {
             limit = Math.max(limit, 1);
             this.pageable = PageRequest.of(0, limit);
@@ -113,12 +112,12 @@ public class ESArticleQueryBuilder {
         return this;
     }
 
-    public ESArticleQueryBuilder withSort(ArticleSortType sortType) {
+    public ElasticQueryBuilder withSort(ArticleSortType sortType) {
         this.sort = createSort(sortType);
         return this;
     }
 
-    public ESArticleQueryBuilder withQueryCondition(ArticleQueryCondition condition) {
+    public ElasticQueryBuilder withQueryCondition(ArticleQueryCondition condition) {
         return this.withTextSearch(condition.search())
                 .withSector(condition.sector())
                 .withTechStacksAndMatch(condition.techStackNames())
@@ -127,7 +126,7 @@ public class ESArticleQueryBuilder {
                 .withPagination(condition.limit(), condition.cursor(), condition.sortType());
     }
 
-    public ESArticleQueryBuilder withTimeoutMillis(long timeoutMillis) {
+    public ElasticQueryBuilder withTimeoutMillis(long timeoutMillis) {
         this.timeoutMillis = timeoutMillis;
         return this;
     }
@@ -197,7 +196,7 @@ public class ESArticleQueryBuilder {
                 ._toQuery();
     }
 
-    private Query exactTokenQuery(String token){
+    private Query exactTokenQuery(String token) {
         return Query.of(q -> {
             String title = "title^1.5";
             String summary = "summary^1.25";

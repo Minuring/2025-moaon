@@ -1,11 +1,6 @@
-package moaon.backend.search.indexing;
+package moaon.backend.search.indexing.batch;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import java.io.IOException;
-import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 import moaon.backend.search.ElasticsearchClientConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -21,11 +16,17 @@ import org.springframework.data.elasticsearch.core.index.Settings;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.BulkOptions;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-@Repository
-public class ArticleIndexRepository {
+import java.io.IOException;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+@Component
+class ElasticBatchClient {
 
     private static final BulkOptions BULK_OPTIONS_TIMEOUT = BulkOptions.builder()
             .withTimeout(Duration.ofSeconds(90))
@@ -34,7 +35,7 @@ public class ArticleIndexRepository {
     private final ElasticsearchOperations ops;
     private final ElasticsearchClient esClient;
 
-    public ArticleIndexRepository(
+    public ElasticBatchClient(
             @Qualifier(ElasticsearchClientConfig.BULK_OPERATIONS) ElasticsearchOperations ops,
             @Qualifier(ElasticsearchClientConfig.BULK_CLIENT) ElasticsearchClient esClient
     ) {

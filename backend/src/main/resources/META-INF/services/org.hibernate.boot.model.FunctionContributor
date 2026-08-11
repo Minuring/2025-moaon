@@ -1,1 +1,2 @@
 moaon.backend.project.repository.ProjectFullTextSearchHQLFunction
+moaon.backend.article.repository.ArticleFullTextSearchHQLFunction

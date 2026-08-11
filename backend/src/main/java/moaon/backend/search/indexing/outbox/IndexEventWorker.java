@@ -2,8 +2,7 @@ package moaon.backend.search.indexing.outbox;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import moaon.backend.article.repository.ArticleDBRepository;
-import moaon.backend.search.indexing.ElasticIndexingClientWrapper;
+import moaon.backend.article.repository.ArticleRepository;
 import moaon.backend.search.indexing.outbox.IndexEvent.Action;
 import moaon.backend.search.query.ArticleDocument;
 import org.springframework.data.domain.PageRequest;
@@ -27,8 +26,8 @@ public class IndexEventWorker {
     private static final int BATCH_SIZE = 1000;
 
     private final IndexEventRepository indexEventRepository;
-    private final ArticleDBRepository articleRepository;
-    private final ElasticIndexingClientWrapper esClient;
+    private final ArticleRepository articleRepository;
+    private final ElasticIndexingClient indexingClient;
     private final TransactionTemplate transactionTemplate;
 
     //TODO: 배치로 변경
@@ -39,7 +38,7 @@ public class IndexEventWorker {
         if (events.isEmpty()) {
             return;
         }
-        if (!esClient.isHealthy()) {
+        if (!indexingClient.isHealthy()) {
             log.warn("색인 배치 스킵: ES 비정상 상태, 대상 {}건 보류", events.size());
             return;
         }
@@ -61,7 +60,7 @@ public class IndexEventWorker {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void doIndexOneAsync(IndexRequestedEvent event) {
-        if (!esClient.isHealthy()) {
+        if (!indexingClient.isHealthy()) {
             return;
         }
 
@@ -79,16 +78,16 @@ public class IndexEventWorker {
 
     private void processEvent(IndexEvent e) throws IOException {
         if (e.getAction() == Action.DELETED) {
-            esClient.delete(e.getEntityId());
+            indexingClient.delete(e.getEntityId());
         } else {
             ArticleDocument doc = transactionTemplate.execute(status ->
                     articleRepository.findById(e.getEntityId())
                             .map(ArticleDocument::new)
                             .orElse(null));
             if (doc == null) {
-                esClient.delete(e.getEntityId());
+                indexingClient.delete(e.getEntityId());
             } else if (e.getAction() == Action.INDEXING) {
-                esClient.upsert(doc);
+                indexingClient.upsert(doc);
             }
         }
 

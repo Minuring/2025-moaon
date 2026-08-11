@@ -1,7 +1,5 @@
 package moaon.backend.search.query;
 
-import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import moaon.backend.article.domain.ArticleCursor;
 import moaon.backend.article.dto.ArticleDto;
@@ -14,18 +12,20 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.RefreshPolicy;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 
-@Repository
+import java.util.List;
+
+@Component
 @RequiredArgsConstructor
-public class ArticleDocumentRepository {
+public class ElasticQueryClient {
 
     private static final IndexCoordinates ARTICLE_ALIAS = IndexCoordinates.of("articles");
 
     private final ElasticsearchOperations ops;
 
     public ArticleSearchResult search(ArticleQueryCondition condition) {
-        NativeQuery esArticleQuery = new ESArticleQueryBuilder()
+        NativeQuery esArticleQuery = new ElasticQueryBuilder()
                 .withQueryCondition(condition)
                 .build();
         SearchHits<ArticleDocument> searchHits = ops.search(esArticleQuery, ArticleDocument.class, ARTICLE_ALIAS);
@@ -33,7 +33,7 @@ public class ArticleDocumentRepository {
     }
 
     public ArticleSearchResult searchInProject(Project project, ArticleQueryCondition condition) {
-        NativeQuery esArticleQuery = new ESArticleQueryBuilder()
+        NativeQuery esArticleQuery = new ElasticQueryBuilder()
                 .withIds(project.getArticleIds())
                 .withQueryCondition(condition)
                 .build();

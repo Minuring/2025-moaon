@@ -1,14 +1,8 @@
 package moaon.backend.api.article;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
-
-import java.util.List;
-
 import moaon.backend.api.BaseApiTest;
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.ArticleSortType;
@@ -19,17 +13,13 @@ import moaon.backend.article.draft.ArticleDraftRepository;
 import moaon.backend.article.dto.ArticleCreateRequest;
 import moaon.backend.article.dto.ArticleDto;
 import moaon.backend.article.dto.ArticleListResponse;
-import moaon.backend.search.query.ArticleDocumentRepository;
-import moaon.backend.fixture.ArticleFixtureBuilder;
-import moaon.backend.fixture.FakeArticleSearchResult;
-import moaon.backend.fixture.Fixture;
-import moaon.backend.fixture.ProjectFixtureBuilder;
-import moaon.backend.fixture.RepositoryHelper;
+import moaon.backend.fixture.*;
 import moaon.backend.global.config.QueryDslConfig;
 import moaon.backend.member.Member;
 import moaon.backend.member.service.JwtTokenService;
 import moaon.backend.member.service.MemberService;
 import moaon.backend.project.domain.Project;
+import moaon.backend.search.ElasticSearchService;
 import moaon.backend.techStack.domain.TechStack;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +28,11 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 @Import({RepositoryHelper.class, QueryDslConfig.class})
 public class ArticleApiTest extends BaseApiTest {
@@ -55,7 +50,7 @@ public class ArticleApiTest extends BaseApiTest {
     private MemberService memberService;
 
     @MockitoBean
-    private ArticleDocumentRepository articleDocumentRepository;
+    private ElasticSearchService elasticSearchService;
 
     private String token;
 
@@ -215,7 +210,7 @@ public class ArticleApiTest extends BaseApiTest {
                         .build()
         );
 
-        Mockito.when(articleDocumentRepository.search(Mockito.any()))
+        Mockito.when(elasticSearchService.search(Mockito.any()))
                 .thenReturn(FakeArticleSearchResult.create(
                         List.of(ArticleDto.from(articleClickRankFirst), ArticleDto.from(articleClickRankSecond)),
                         3, 2, ArticleSortType.CLICKS));

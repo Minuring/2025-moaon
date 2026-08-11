@@ -1,18 +1,16 @@
 package moaon.backend.search.indexing.batch;
 
-import java.time.Instant;
-import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import moaon.backend.search.indexing.ArticleIndexRepository;
 import moaon.backend.search.query.ArticleDocument;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
-import org.springframework.data.elasticsearch.annotations.Alias;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+
+import java.time.Instant;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -20,15 +18,15 @@ public class CreateNewIndexTasklet implements Tasklet {
 
     private static final Document DOCUMENT_ANNOTATION = ArticleDocument.class.getAnnotation(Document.class);
 
-    private final ArticleIndexRepository indexRepository;
+    private final ElasticBatchClient batchClient;
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) {
         var newIndexName = DOCUMENT_ANNOTATION.indexName() + "-" + Instant.now().toEpochMilli();
         var newIndexCoords = IndexCoordinates.of(newIndexName);
 
-        indexRepository.createIndex(newIndexCoords, ArticleDocument.class);
-        indexRepository.updateRefreshInterval(newIndexCoords, "-1");
+        batchClient.createIndex(newIndexCoords, ArticleDocument.class);
+        batchClient.updateRefreshInterval(newIndexCoords, "-1");
         log.info("새 인덱스 생성 (refresh 비활성화): {}", newIndexName);
 
         chunkContext.getStepContext()

@@ -3,7 +3,6 @@ package moaon.backend.search.indexing.outbox;
 import moaon.backend.article.domain.Article;
 import moaon.backend.fixture.ArticleFixtureBuilder;
 import moaon.backend.fixture.RepositoryHelper;
-import moaon.backend.search.indexing.ElasticIndexingClientWrapper;
 import moaon.backend.search.indexing.outbox.IndexEvent.Action;
 import moaon.backend.search.query.ArticleDocument;
 import org.junit.jupiter.api.DisplayName;
@@ -47,7 +46,7 @@ class IndexEventWorkerTest {
     private IndexEventWorker indexEventWorker;
 
     @MockitoBean
-    private ElasticIndexingClientWrapper esClient;
+    private ElasticIndexingClient indexingClient;
 
     @Test
     @DisplayName("doIndexOneAsync: ES 클러스터가 Red면 처리하지 않는다")
@@ -62,7 +61,7 @@ class IndexEventWorkerTest {
         indexEventWorker.doIndexOneAsync(new IndexRequestedEvent(article.getId()));
 
         // then
-        verify(esClient, never()).upsert(any(ArticleDocument.class));
+        verify(indexingClient, never()).upsert(any(ArticleDocument.class));
     }
 
     @Test
@@ -79,7 +78,7 @@ class IndexEventWorkerTest {
         indexEventWorker.doIndexOneAsync(new IndexRequestedEvent(article.getId()));
 
         // then
-        verify(esClient, never()).upsert(any(ArticleDocument.class));
+        verify(indexingClient, never()).upsert(any(ArticleDocument.class));
     }
 
     @Test
@@ -95,7 +94,7 @@ class IndexEventWorkerTest {
         indexEventWorker.doIndexOneAsync(new IndexRequestedEvent(article.getId()));
 
         // then
-        verify(esClient).upsert(any(ArticleDocument.class));
+        verify(indexingClient).upsert(any(ArticleDocument.class));
         assertThat(indexEventRepository.findByEntityId(article.getId()).orElseThrow().isProcessed()).isTrue();
     }
 
@@ -112,7 +111,7 @@ class IndexEventWorkerTest {
         indexEventWorker.doIndexOneAsync(new IndexRequestedEvent(missingArticleId));
 
         // then
-        verify(esClient).delete(any(Long.class));
+        verify(indexingClient).delete(any(Long.class));
         assertThat(indexEventRepository.findByEntityId(missingArticleId).orElseThrow().isProcessed()).isTrue();
     }
 
@@ -129,7 +128,7 @@ class IndexEventWorkerTest {
         indexEventWorker.doIndexOneAsync(new IndexRequestedEvent(article.getId()));
 
         // then
-        verify(esClient).delete(any(Long.class));
+        verify(indexingClient).delete(any(Long.class));
         assertThat(indexEventRepository.findByEntityId(article.getId()).orElseThrow().isProcessed()).isTrue();
     }
 
@@ -141,7 +140,7 @@ class IndexEventWorkerTest {
 
         Article article = repositoryHelper.save(new ArticleFixtureBuilder().build());
         indexEventRepository.merge(new IndexEvent(article.getId(), Action.INDEXING));
-        doThrow(new IOException("ES down")).when(esClient).upsert(any(ArticleDocument.class));
+        doThrow(new IOException("ES down")).when(indexingClient).upsert(any(ArticleDocument.class));
 
         // when
         indexEventWorker.doIndexOneAsync(new IndexRequestedEvent(article.getId()));
@@ -157,8 +156,8 @@ class IndexEventWorkerTest {
 
         indexEventWorker.doIndexIfRequired();
 
-        verify(esClient, never()).upsert(any(ArticleDocument.class));
-        verify(esClient, never()).delete(any(Long.class));
+        verify(indexingClient, never()).upsert(any(ArticleDocument.class));
+        verify(indexingClient, never()).delete(any(Long.class));
     }
 
     @Test
@@ -174,7 +173,7 @@ class IndexEventWorkerTest {
         indexEventWorker.doIndexIfRequired();
 
         // then
-        verify(esClient, never()).upsert(any(ArticleDocument.class));
+        verify(indexingClient, never()).upsert(any(ArticleDocument.class));
         assertThat(indexEventRepository.findByEntityId(article.getId()).orElseThrow().isProcessed()).isFalse();
     }
 
@@ -191,11 +190,11 @@ class IndexEventWorkerTest {
         indexEventWorker.doIndexIfRequired();
 
         // then
-        verify(esClient).upsert(any(ArticleDocument.class));
+        verify(indexingClient).upsert(any(ArticleDocument.class));
         assertThat(indexEventRepository.findByEntityId(article.getId()).orElseThrow().isProcessed()).isTrue();
     }
 
     private void stubEsClusterHealthy(boolean healthy) {
-        when(esClient.isHealthy()).thenReturn(healthy);
+        when(indexingClient.isHealthy()).thenReturn(healthy);
     }
 }

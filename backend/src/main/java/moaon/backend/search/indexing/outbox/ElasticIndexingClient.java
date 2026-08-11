@@ -1,4 +1,4 @@
-package moaon.backend.search.indexing;
+package moaon.backend.search.indexing.outbox;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.HealthStatus;
@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ElasticIndexingClientWrapper {
+class ElasticIndexingClient {
 
     private static final String INDEX_NAME = "articles";
     private static final int HEALTH_CHECK_INTERVAL_SECONDS = 5;

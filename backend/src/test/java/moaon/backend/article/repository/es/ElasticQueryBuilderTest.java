@@ -10,19 +10,18 @@ import moaon.backend.article.domain.Sector;
 import moaon.backend.article.domain.Topic;
 import moaon.backend.article.dto.ArticleQueryCondition;
 import moaon.backend.global.domain.SearchKeyword;
-import moaon.backend.search.query.ESArticleQueryBuilder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 
-class ESArticleQueryBuilderTest {
+class ElasticQueryBuilderTest {
 
     @DisplayName("Article ID 목록으로 Filter 쿼리 안에 Terms 쿼리를 만든다.")
     @Test
     void withIds_addsTermsFilter() {
-        NativeQuery query = new ESArticleQueryBuilder()
+        NativeQuery query = new ElasticQueryBuilder()
                 .withIds(List.of(1L, 2L, 3L))
                 .build();
 
@@ -33,7 +32,7 @@ class ESArticleQueryBuilderTest {
     @DisplayName("검색어를 포함하면 multi_match 쿼리에 추가된다.")
     @Test
     void withTextSearch_addsMustQuery() {
-        NativeQuery query = new ESArticleQueryBuilder()
+        NativeQuery query = new ElasticQueryBuilder()
                 .withTextSearch(new SearchKeyword("버저닝"))
                 .build();
 
@@ -44,7 +43,7 @@ class ESArticleQueryBuilderTest {
     @DisplayName("검색어가 비어있으면 multi_match 쿼리를 추가하지 않는다.")
     @Test
     void withEmptyText_throwsException() {
-        NativeQuery query = new ESArticleQueryBuilder()
+        NativeQuery query = new ElasticQueryBuilder()
                 .withTextSearch(new SearchKeyword(""))
                 .build();
 
@@ -54,7 +53,7 @@ class ESArticleQueryBuilderTest {
     @DisplayName("Sector 필터를 추가하면 Filter 쿼리 안에 Term 쿼리를 만든다.")
     @Test
     void withSector_addsFilter() {
-        NativeQuery query = new ESArticleQueryBuilder()
+        NativeQuery query = new ElasticQueryBuilder()
                 .withSector(Sector.FE)
                 .build();
 
@@ -65,7 +64,7 @@ class ESArticleQueryBuilderTest {
     @DisplayName("Topics 필터를 AND조건으로 추가하면 Filter 조건 안에 Term쿼리로 각 토픽을 추가한다.")
     @Test
     void withTopicsAndMatch_addsFilter() {
-        NativeQuery query = new ESArticleQueryBuilder()
+        NativeQuery query = new ElasticQueryBuilder()
                 .withTopicsAndMatch(List.of(Topic.DATABASE, Topic.API_DESIGN))
                 .build();
 
@@ -76,7 +75,7 @@ class ESArticleQueryBuilderTest {
     @DisplayName("Topics 필터를 OR조건으로 추가하면 Filter - Should 조건 안에 Term쿼리로 각 토픽을 추가한다.")
     @Test
     void withTopicsORMatch_addsFilter() {
-        NativeQuery query = new ESArticleQueryBuilder()
+        NativeQuery query = new ElasticQueryBuilder()
                 .withTopicsOrMatch(List.of(Topic.DATABASE, Topic.API_DESIGN))
                 .build();
 
@@ -87,7 +86,7 @@ class ESArticleQueryBuilderTest {
     @DisplayName("Pagination을 설정한다.")
     @Test
     void withPagination_and_Sort() {
-        NativeQuery query = new ESArticleQueryBuilder()
+        NativeQuery query = new ElasticQueryBuilder()
                 .withPagination(20, new ArticleCursor(100, 10L), ArticleSortType.CLICKS)
                 .withSort(ArticleSortType.CLICKS)
                 .build();
@@ -105,7 +104,7 @@ class ESArticleQueryBuilderTest {
     @DisplayName("정렬 타입이 RELEVANCE일 경우 score를 추적하고 _score 정렬이 포함된다.")
     @Test
     void relevance_sort_enablesTrackScores() {
-        NativeQuery query = new ESArticleQueryBuilder()
+        NativeQuery query = new ElasticQueryBuilder()
                 .withSort(ArticleSortType.RELEVANCE)
                 .build();
 
@@ -118,7 +117,7 @@ class ESArticleQueryBuilderTest {
     @DisplayName("ArticleQueryCondition으로 전체 조건을 조합할 수 있다.")
     @Test
     void withQueryCondition_combinesAll() {
-        NativeQuery query = new ESArticleQueryBuilder()
+        NativeQuery query = new ElasticQueryBuilder()
                 .withQueryCondition(new ArticleQueryCondition(
                         new SearchKeyword("테스트"),            // search
                         Sector.BE,                                  // sector
