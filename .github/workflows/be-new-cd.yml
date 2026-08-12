@@ -2,7 +2,7 @@ name: BE Deploy
 
 on:
   push:
-    branches: [ "me" ]
+    branches: [ "me", "query-tune" ]
 
 jobs:
   build-and-push-image:
