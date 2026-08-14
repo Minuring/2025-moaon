@@ -1,5 +1,6 @@
 package moaon.backend.article;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.article.domain.Article;
@@ -40,27 +41,27 @@ public class ArticleService {
     private final ProjectRepository projectRepository;
     private final TechStackResolver techStackResolver;
 
-//    @CircuitBreaker(name = "articleSearchCB", fallbackMethod = "getPagedArticlesFromDB")
-//    public ArticleListResponse getPagedArticles(ArticleQueryCondition queryCondition) {
-//        ArticleSearchResult result = elasticSearchService.search(queryCondition);
-//        return ArticleListResponse.from(result);
-//    }
-
+    @CircuitBreaker(name = "articleSearchCB", fallbackMethod = "getPagedArticlesFromDB")
     public ArticleListResponse getPagedArticles(ArticleQueryCondition queryCondition) {
+        ArticleSearchResult result = elasticSearchService.search(queryCondition);
+        return ArticleListResponse.from(result);
+    }
+
+    public ArticleListResponse getPagedArticlesFromDB(ArticleQueryCondition queryCondition) {
         ArticleSearchResult result = articleRepository.search(queryCondition, null);
         return ArticleListResponse.from(result);
     }
 
-//    @CircuitBreaker(name = "articleSearchCB", fallbackMethod = "getByProjectIdFromDB")
-//    public ProjectArticleResponse getByProjectId(long id, ProjectArticleQueryCondition condition) {
-//        Project project = projectRepository.findById(id)
-//                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-//        ArticleSearchResult filteredArticles = elasticSearchService.searchInProject(project, condition);
-//        Map<Sector, Long> articleCountBySector = project.countArticlesGroupBySector();
-//        return ProjectArticleResponse.of(filteredArticles.articles(), articleCountBySector);
-//    }
-
+    @CircuitBreaker(name = "articleSearchCB", fallbackMethod = "getByProjectIdFromDB")
     public ProjectArticleResponse getByProjectId(long id, ProjectArticleQueryCondition condition) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+        ArticleSearchResult filteredArticles = elasticSearchService.searchInProject(project, condition);
+        Map<Sector, Long> articleCountBySector = project.countArticlesGroupBySector();
+        return ProjectArticleResponse.of(filteredArticles.articles(), articleCountBySector);
+    }
+
+    public ProjectArticleResponse getByProjectIdFromDB(long id, ProjectArticleQueryCondition condition) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
         ArticleSearchResult filteredArticles = articleRepository.search(condition.toArticleCondition(), project.getId());
