@@ -1,19 +1,22 @@
 package moaon.backend.project.repository;
 
-import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import moaon.backend.global.domain.SearchKeyword;
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
 import moaon.backend.project.ProjectDao;
+import moaon.backend.project.domain.Category;
 import moaon.backend.project.domain.Project;
 import moaon.backend.project.domain.ProjectCategory;
 import moaon.backend.project.domain.Projects;
 import moaon.backend.project.dto.ProjectQueryCondition;
 import moaon.backend.techStack.domain.ProjectTechStack;
+import moaon.backend.techStack.domain.TechStack;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
+
+import java.util.List;
+import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
@@ -24,13 +27,11 @@ public class CustomizedProjectRepositoryImpl implements CustomizedProjectReposit
     @Override
     public Projects findWithSearchConditions(ProjectQueryCondition condition) {
         int limit = condition.limit();
-        List<String> techStackNames = condition.techStackNames();
         SearchKeyword search = condition.search();
-        List<String> categoryNames = condition.categoryNames();
 
         FilteringIds filteringIds = FilteringIds.init();
-        filteringIds = applyTechStacks(filteringIds, techStackNames);
-        filteringIds = applyCategories(filteringIds, categoryNames);
+        filteringIds = applyTechStacks(filteringIds, condition.techStacks());
+        filteringIds = applyCategories(filteringIds, condition.categories());
         filteringIds = applySearch(filteringIds, search);
 
         if (filteringIds.hasEmptyResult()) {
@@ -57,26 +58,28 @@ public class CustomizedProjectRepositoryImpl implements CustomizedProjectReposit
                 .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
     }
 
-    private FilteringIds applyTechStacks(FilteringIds filteringIds, List<String> techStack) {
-        if (filteringIds.hasEmptyResult() || CollectionUtils.isEmpty(techStack)) {
+    private FilteringIds applyTechStacks(FilteringIds filteringIds, List<TechStack> techStacks) {
+        if (filteringIds.hasEmptyResult() || CollectionUtils.isEmpty(techStacks)) {
             return filteringIds;
         }
 
-        Set<Long> projectIdsByTechStacks = projectDao.findProjectIdsByTechStacks(filteringIds, techStack);
+        List<String> techStackNames = techStacks.stream().map(TechStack::getName).toList();
+        Set<Long> projectIdsByTechStacks = projectDao.findProjectIdsByTechStacks(filteringIds, techStackNames);
         return filteringIds.addFilterResult(projectIdsByTechStacks);
     }
 
-    private FilteringIds applyCategories(FilteringIds filteringIds, List<String> categories) {
+    private FilteringIds applyCategories(FilteringIds filteringIds, List<Category> categories) {
         if (filteringIds.hasEmptyResult() || CollectionUtils.isEmpty(categories)) {
             return filteringIds;
         }
 
-        Set<Long> projectIdsByCategories = projectDao.findProjectIdsByCategories(filteringIds, categories);
+        List<String> categoryNames = categories.stream().map(Category::getName).toList();
+        Set<Long> projectIdsByCategories = projectDao.findProjectIdsByCategories(filteringIds, categoryNames);
         return filteringIds.addFilterResult(projectIdsByCategories);
     }
 
     private FilteringIds applySearch(FilteringIds filteringIds, SearchKeyword keyword) {
-        if (filteringIds.hasEmptyResult() || keyword == null || !keyword.hasValue()) {
+        if (filteringIds.hasEmptyResult() || keyword == null) {
             return filteringIds;
         }
 

@@ -1,8 +1,11 @@
 package moaon.backend.article.domain;
 
-import java.util.Arrays;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import moaon.backend.global.exception.custom.CustomException;
+import moaon.backend.global.exception.custom.ErrorCode;
+
+import java.util.Arrays;
 
 @RequiredArgsConstructor
 @Getter
@@ -48,10 +51,14 @@ public enum Topic {
 
     private final String name;
 
+    private boolean matchesName(String name) {
+        return this.name.equalsIgnoreCase(name);
+    }
+
     public static Topic of(String name) {
         return Arrays.stream(Topic.values())
-                .filter(topic -> topic.getName().equals(name))
+                .filter(topic -> topic.matchesName(name))
                 .findAny()
-                .orElse(null);
+                .orElseThrow(() -> new CustomException(ErrorCode.TOPIC_NOT_FOUND));
     }
 }

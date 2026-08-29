@@ -29,6 +29,10 @@ public enum ErrorCode {
     ARTICLE_INVALID_TOPICS("ARTICLE-003", "아티클의 토픽은 중복을 제외하고 1 ~ 3 개 입니다.", HttpStatus.BAD_REQUEST),
     ARTICLE_DRAFT_NOT_FOUND("ARTICLE-004", "아티클 초안을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
+    SECTOR_NOT_FOUND("SECTOR-001", "존재하지 않는 sector 값입니다.", HttpStatus.BAD_REQUEST),
+    TOPIC_NOT_FOUND("TOPIC-001", "존재하지 않는 topic 값입니다.", HttpStatus.BAD_REQUEST),
+    SORT_NOT_FOUND("SORT-001", "존재하지 않는 sort 기준 값입니다.", HttpStatus.BAD_REQUEST),
+
     // 권한이 필요한 url
     ARTICLE_URL_FORBIDDEN("URL-001", "접근 권한이 없는 URL 입니다.", HttpStatus.FORBIDDEN),
     // 잘못된 url
@@ -50,7 +54,7 @@ public enum ErrorCode {
 
     INVALID_SEARCH_KEYWORD_LENGTH(
             "SEARCH-001",
-            String.format("검색어는 %d자 이하여야 합니다.", SearchKeyword.getMaxLength()),
+            String.format("검색어는 1자 이상 %d자 이하여야 합니다.", SearchKeyword.getMaxLength()),
             HttpStatus.BAD_REQUEST
     ),
 

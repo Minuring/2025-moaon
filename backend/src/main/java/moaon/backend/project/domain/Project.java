@@ -1,30 +1,7 @@
 package moaon.backend.project.domain;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import jakarta.persistence.*;
+import lombok.*;
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.Sector;
 import moaon.backend.global.domain.BaseTimeEntity;
@@ -33,13 +10,18 @@ import moaon.backend.global.exception.custom.ErrorCode;
 import moaon.backend.member.Member;
 import moaon.backend.techStack.domain.ProjectTechStack;
 import moaon.backend.techStack.domain.TechStack;
-import org.hibernate.annotations.BatchSize;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @EqualsAndHashCode(of = "id", callSuper = false)
-@ToString
+@ToString(of = "id")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @Table(indexes = {
@@ -92,25 +74,6 @@ public class Project extends BaseTimeEntity {
     private List<Article> articles = new ArrayList<>();
 
     public Project(
-            Project project,
-            List<ProjectTechStack> techStacks,
-            List<ProjectCategory> categories
-    ) {
-        this.id = project.getId();
-        this.author = project.getAuthor();
-        this.title = project.getTitle();
-        this.summary = project.getSummary();
-        this.description = project.getDescription();
-        this.techStacks = techStacks;
-        this.categories = categories;
-        this.images = project.getImages();
-        this.githubUrl = project.getGithubUrl();
-        this.productionUrl = project.getProductionUrl();
-        this.createdAt = project.getCreatedAt();
-        this.lovedMembers = project.getLovedMembers();
-    }
-
-    public Project(
             String title,
             String summary,
             String description,
@@ -158,6 +121,9 @@ public class Project extends BaseTimeEntity {
         this.createdAt = createdAt;
     }
 
+    public boolean isOwnedBy(Member member) {
+        return member.equals(author);
+    }
 
     public void addViewCount() {
         views++;

@@ -1,26 +1,22 @@
 package moaon.backend.article.dto;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.List;
 import moaon.backend.article.domain.ArticleSortType;
 import moaon.backend.article.domain.Sector;
 import moaon.backend.global.domain.SearchKeyword;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullSource;
-import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ArticleQueryConditionTest {
 
     @DisplayName("관련도순 정렬인데 검색어가 없으면 CREATED_AT 정렬 기준을 선택한다.")
-    @ParameterizedTest
-    @ValueSource(strings = {"", "  ", "\n", "\t"})
-    @NullSource
-    void from_relevance_with_no_searchKeyword(String emptySearch) {
+    @Test
+    void from_relevance_with_no_searchKeyword() {
         ArticleQueryCondition condition = new ArticleQueryCondition(
-                new SearchKeyword(emptySearch),
+                null,
                 Sector.BE,
                 List.of(),
                 List.of(),

@@ -6,8 +6,7 @@ import java.util.List;
 import moaon.backend.article.domain.Sector;
 import moaon.backend.article.domain.Topic;
 import moaon.backend.article.draft.ArticleDraft;
-import moaon.backend.fixture.Fixture;
-import moaon.backend.member.Member;
+import moaon.backend.fixture.Fixtures;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +15,7 @@ class ArticleDraftTest {
     @DisplayName("applyAnalysis: 255자 이하 요약은 그대로 저장한다")
     @Test
     void applyAnalysis_keepsShortSummary() {
-        ArticleDraft draft = new ArticleDraft(Fixture.anyMember(), "https://example.com", "title", "content");
+        ArticleDraft draft = new ArticleDraft(Fixtures.anyMember(), "https://example.com", "title", "content");
 
         draft.applyAnalysis("짧은 요약입니다.", Sector.BE, List.of(Topic.TECHNOLOGY_ADOPTION), List.of());
 
@@ -26,7 +25,7 @@ class ArticleDraftTest {
     @DisplayName("applyAnalysis: 255자를 초과하는 요약은 컬럼 길이에 맞게 잘라서 저장한다")
     @Test
     void applyAnalysis_truncatesLongSummary() {
-        ArticleDraft draft = new ArticleDraft(Fixture.anyMember(), "https://example.com", "title", "content");
+        ArticleDraft draft = new ArticleDraft(Fixtures.anyMember(), "https://example.com", "title", "content");
         String longSummary = "가".repeat(300);
 
         draft.applyAnalysis(longSummary, Sector.BE, List.of(Topic.TECHNOLOGY_ADOPTION), List.of());

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import io.restassured.RestAssured;
 import moaon.backend.api.BaseApiTest;
-import moaon.backend.fixture.Fixture;
+import moaon.backend.fixture.Fixtures;
 import moaon.backend.fixture.RepositoryHelper;
 import moaon.backend.global.config.QueryDslConfig;
 import moaon.backend.member.Member;
@@ -29,7 +29,7 @@ public class MemberApiTest extends BaseApiTest {
     @Test
     void loginCheck() {
         // given
-        Member member = Fixture.anyMember();
+        Member member = Fixtures.anyMember();
         Member savedMember = helper.save(member);
 
         String token = jwtTokenService.createToken(member.getId());

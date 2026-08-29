@@ -49,7 +49,7 @@ public class ProjectApiTest extends BaseApiTest {
 
     @BeforeEach
     void cookieSetUp() {
-        Member member = Fixture.anyMember();
+        Member member = Fixtures.anyMember();
         repositoryHelper.save(member);
 
         token = jwtTokenService.createToken(member.getId());
@@ -108,7 +108,7 @@ public class ProjectApiTest extends BaseApiTest {
     @Test
     void getProjectById() {
         // given
-        Project project = repositoryHelper.save(new ProjectFixtureBuilder().build());
+        Project project = repositoryHelper.saveAnyProject();
 
         // when & then 첫 조회 - 기본 응답 + 조회수 증가 + 쿠키 설정
         ValidatableResponse firstResponse = RestAssured.given().log().all()
@@ -150,51 +150,43 @@ public class ProjectApiTest extends BaseApiTest {
     @Test
     void getPagedProjects() {
         // given
-        String filteredSearch = "moaon";
-        String unfilteredSearch = "momoon";
-        Category filteredCategory = Fixture.anyProjectCategory();
-        Category unfilteredCategory = Fixture.anyProjectCategory();
-        TechStack filteredTechStack = Fixture.anyTechStack();
-        TechStack unfilteredTechStack = Fixture.anyTechStack();
+        Category filteredCategory = Fixtures.anyProjectCategory();
+        Category unfilteredCategory = Fixtures.anyProjectCategory();
+        TechStack filteredTechStack = Fixtures.anyTechStack();
+        TechStack unfilteredTechStack = Fixtures.anyTechStack();
 
         repositoryHelper.save(
-                new ProjectFixtureBuilder()
-                        .description(unfilteredSearch)
+                Fixtures.projectBuilder()
                         .categories(filteredCategory)
                         .techStacks(filteredTechStack)
                         .build()
         );
         repositoryHelper.save(
-                new ProjectFixtureBuilder()
-                        .description(filteredSearch)
+                Fixtures.projectBuilder()
                         .categories(unfilteredCategory)
                         .techStacks(filteredTechStack)
                         .build()
         );
         repositoryHelper.save(
-                new ProjectFixtureBuilder()
-                        .description(filteredSearch)
+                Fixtures.projectBuilder()
                         .categories(filteredCategory)
                         .techStacks(unfilteredTechStack)
                         .build()
         );
 
-        Project projectViewRankThird = repositoryHelper.save(new ProjectFixtureBuilder()
-                .description(filteredSearch)
+        Project projectViewRankThird = repositoryHelper.save(Fixtures.projectBuilder()
                 .categories(filteredCategory)
                 .techStacks(filteredTechStack)
                 .views(1)
                 .build()
         );
-        Project projectViewRankSecond = repositoryHelper.save(new ProjectFixtureBuilder()
-                .summary(filteredSearch)
+        Project projectViewRankSecond = repositoryHelper.save(Fixtures.projectBuilder()
                 .categories(filteredCategory)
                 .techStacks(filteredTechStack)
                 .views(2)
                 .build()
         );
-        Project projectViewRankFirst = repositoryHelper.save(new ProjectFixtureBuilder()
-                .title(filteredSearch)
+        Project projectViewRankFirst = repositoryHelper.save(Fixtures.projectBuilder()
                 .categories(filteredCategory)
                 .techStacks(filteredTechStack)
                 .views(3)
@@ -203,7 +195,6 @@ public class ProjectApiTest extends BaseApiTest {
 
         // when
         PagedProjectResponse actualResponses = RestAssured.given().log().all()
-                .queryParams("search", filteredSearch)
                 .queryParams("sort", "views")
                 .queryParams("categories", List.of(filteredCategory.getName()))
                 .queryParams("techStacks", List.of(filteredTechStack.getName()))
@@ -225,48 +216,48 @@ public class ProjectApiTest extends BaseApiTest {
     @Test
     void getArticlesByProjectId() {
         // given
-        Project targetProject = repositoryHelper.save(new ProjectFixtureBuilder().build());
+        Project targetProject = repositoryHelper.saveAnyProject();
         Sector filteredSector = Sector.BE;
         Sector unfilteredSector = Sector.FE;
         String filteredSearch = "모아온";
         String unfilteredSearch = "핏토링";
 
         Article filteredArticle1 = repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .project(targetProject)
                         .sector(filteredSector)
                         .title(filteredSearch)
                         .build()
         );
         Article filteredArticle2 = repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .project(targetProject)
                         .sector(filteredSector)
                         .summary(filteredSearch)
                         .build()
         );
         Article filteredArticle3 = repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .project(targetProject)
                         .sector(filteredSector)
-                        .content(filteredSearch)
-                        .build()
+                        .build(),
+                filteredSearch
         );
         repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .sector(filteredSector)
                         .title(filteredSearch)
                         .build()
         );
         repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .project(targetProject)
                         .sector(unfilteredSector)
                         .title(filteredSearch)
                         .build()
         );
         repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .project(targetProject)
                         .sector(filteredSector)
                         .title(unfilteredSearch)

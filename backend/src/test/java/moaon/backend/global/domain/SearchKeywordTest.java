@@ -1,18 +1,25 @@
 package moaon.backend.global.domain;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 class SearchKeywordTest {
+
+    @DisplayName("검색어가 null인 경우 예외를 발생시킨다.")
+    @Test
+    void constructWithNull() {
+        assertThatThrownBy(() -> new SearchKeyword(null))
+                .isInstanceOf(CustomException.class)
+                .hasMessage(ErrorCode.INVALID_SEARCH_KEYWORD_LENGTH.getMessage());
+    }
 
     @DisplayName("검색어의 길이가 최대 길이를 초과한 경우 예외를 발생시킨다.")
     @Test
@@ -21,23 +28,6 @@ class SearchKeywordTest {
         assertThatThrownBy(() -> new SearchKeyword(overMaxLength))
                 .isInstanceOf(CustomException.class)
                 .hasMessage(ErrorCode.INVALID_SEARCH_KEYWORD_LENGTH.getMessage());
-    }
-
-    @DisplayName("값이 존재하는 지 알 수 있다. - true")
-    @ParameterizedTest
-    @ValueSource(strings = {"A", "A B C", "A B C D"})
-    void hasValueTrue(String value) {
-        SearchKeyword searchKeyword = new SearchKeyword(value);
-        assertThat(searchKeyword.hasValue()).isTrue();
-    }
-
-    @DisplayName("값이 존재하는 지 알 수 있다. - false")
-    @ParameterizedTest
-    @ValueSource(strings = {"", "     ", "\n", "\t"})
-    @NullSource
-    void hasValueFalse(String value) {
-        SearchKeyword searchKeyword = new SearchKeyword(value);
-        assertThat(searchKeyword.hasValue()).isFalse();
     }
 
     @DisplayName("오직 하나의 토큰으로 이루어져 있는 지 알 수 있다. - true")
@@ -50,7 +40,7 @@ class SearchKeywordTest {
 
     @DisplayName("오직 하나의 토큰으로 이루어져 있는 지 알 수 있다. - false")
     @ParameterizedTest
-    @ValueSource(strings = {"", "토 큰", "토 큰 토 큰"})
+    @ValueSource(strings = {"토 큰", "토 큰 토 큰"})
     void hasOnlyOneTokenFalse(String value) {
         SearchKeyword searchKeyword = new SearchKeyword(value);
         assertThat(searchKeyword.hasOnlyOneToken()).isFalse();

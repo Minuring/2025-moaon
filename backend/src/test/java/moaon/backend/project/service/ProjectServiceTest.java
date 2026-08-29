@@ -1,136 +1,75 @@
 package moaon.backend.project.service;
 
 
+import moaon.backend.fixture.RepositoryHelper;
+import moaon.backend.fixture.ServiceLayerTest;
+import moaon.backend.global.exception.custom.CustomException;
+import moaon.backend.global.exception.custom.ErrorCode;
+import moaon.backend.project.ProjectService;
+import moaon.backend.project.domain.Project;
+import moaon.backend.project.dto.PagedProjectResponse;
+import moaon.backend.project.dto.ProjectDetailResponse;
+import moaon.backend.project.dto.ProjectQueryCondition;
+import moaon.backend.project.dto.ProjectSummaryResponse;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-import java.util.List;
-import moaon.backend.fixture.ProjectFixtureBuilder;
-import moaon.backend.global.exception.custom.CustomException;
-import moaon.backend.global.exception.custom.ErrorCode;
-import moaon.backend.project.ProjectCursor;
-import moaon.backend.project.ProjectService;
-import moaon.backend.project.domain.Project;
-import moaon.backend.project.domain.ProjectSortType;
-import moaon.backend.project.domain.Projects;
-import moaon.backend.project.dto.PagedProjectResponse;
-import moaon.backend.project.dto.ProjectQueryCondition;
-import moaon.backend.project.dto.ProjectSummaryResponse;
-import moaon.backend.project.repository.ProjectRepository;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-@ExtendWith(MockitoExtension.class)
+@ServiceLayerTest
 class ProjectServiceTest {
 
-    @Mock
-    private ProjectRepository projectRepository;
-
-    @InjectMocks
+    @Autowired
     private ProjectService projectService;
 
-    @Disabled
+    @Autowired
+    private RepositoryHelper repositoryHelper;
+
+    @DisplayName("특정 프로젝트를 조회한다.")
+    @Test
+    void getById() {
+        // given
+        Project project = repositoryHelper.saveAnyProject();
+
+        // when
+        ProjectDetailResponse response = projectService.getById(project.getId());
+
+        // then
+        assertAll(
+                () -> assertThat(response.id()).isEqualTo(project.getId()),
+                () -> assertThat(response.title()).isEqualTo(project.getTitle()),
+                () -> assertThat(response.summary()).isEqualTo(project.getSummary())
+        );
+    }
+
     @DisplayName("ID에 해당하는 프로젝트가 존재하지 않는다면 예외가 발생한다.")
     @Test
-    void getProjectById() {
-        assertThatThrownBy(() -> projectService.getById(1L))
+    void getById_notFound() {
+        assertThatThrownBy(() -> projectService.getById(999L))
                 .isInstanceOf(CustomException.class)
                 .hasMessage(ErrorCode.PROJECT_NOT_FOUND.getMessage());
     }
 
-    @DisplayName("다음 아티클이 존재할 때 nextCursor를 포함하여 아티클을 리턴한다.")
+    @DisplayName("주어진 조건으로 프로젝트들을 조회한다")
     @Test
-    void getPagedArticlesWhenHasNext() {
+    void getPagedProjects() {
         // given
-        Project project1 = new ProjectFixtureBuilder()
-                .id(1L)
-                .build();
-        Project project2 = new ProjectFixtureBuilder()
-                .id(2L)
-                .build();
-        Project project3 = new ProjectFixtureBuilder()
-                .id(3L)
-                .build();
-        List<Project> projects = List.of(project1, project2, project3);
-
-        ProjectQueryCondition projectQueryCondition = new ProjectQueryCondition(
-                null,
-                null,
-                null,
-                ProjectSortType.CREATED_AT,
-                2,
-                null
-        );
-
-        Mockito.when(projectRepository.findWithSearchConditions(Mockito.any()))
-                .thenReturn(new Projects(projects, 5, projectQueryCondition.limit()));
-
-        ProjectCursor<?> cursor = projectQueryCondition.projectSortType().toCursor(project2);
-
-        ProjectSummaryResponse projectSummaryResponse1 = ProjectSummaryResponse.from(project1);
-        ProjectSummaryResponse projectSummaryResponse2 = ProjectSummaryResponse.from(project2);
+        Project p1 = repositoryHelper.saveAnyProject();
+        Project p2 = repositoryHelper.saveAnyProject();
 
         // when
-        PagedProjectResponse actual = projectService.getPagedProjects(projectQueryCondition);
+        ProjectQueryCondition condition = new ProjectQueryCondition();
+        PagedProjectResponse response = projectService.getPagedProjects(condition);
 
         // then
         assertAll(
-                () -> assertThat(actual.contents()).containsExactly(projectSummaryResponse1, projectSummaryResponse2),
-                () -> assertThat(actual.hasNext()).isTrue(),
-                () -> assertThat(actual.totalCount()).isEqualTo(5L),
-                () -> assertThat(actual.nextCursor()).isEqualTo(cursor.getNextCursor())
+                () -> assertThat(response.contents()).extracting(ProjectSummaryResponse::id).contains(p1.getId(), p2.getId()),
+                () -> assertThat(response.hasNext()).isFalse(),
+                () -> assertThat(response.nextCursor()).isNull(),
+                () -> assertThat(response.totalCount()).isEqualTo(2L)
         );
     }
-
-    @DisplayName("다음 아티클이 존재하지 않다면 nextCursor 에 공백을 넣고 리턴한다.")
-    @Test
-    void getPagedArticlesWhenHasNoNext() {
-        // given
-        Project project1 = new ProjectFixtureBuilder()
-                .id(1L)
-                .build();
-        Project project2 = new ProjectFixtureBuilder()
-                .id(2L)
-                .build();
-        Project project3 = new ProjectFixtureBuilder()
-                .id(3L)
-                .build();
-
-        List<Project> projects = List.of(project1, project2, project3);
-
-        ProjectQueryCondition projectQueryCondition = new ProjectQueryCondition(
-                null,
-                null,
-                null,
-                ProjectSortType.CREATED_AT,
-                3,
-                null
-        );
-
-        Mockito.when(projectRepository.findWithSearchConditions(Mockito.any()))
-                .thenReturn(new Projects(projects, 3, projectQueryCondition.limit()));
-
-        ProjectSummaryResponse projectSummaryResponse1 = ProjectSummaryResponse.from(project1);
-        ProjectSummaryResponse projectSummaryResponse2 = ProjectSummaryResponse.from(project2);
-        ProjectSummaryResponse projectSummaryResponse3 = ProjectSummaryResponse.from(project3);
-
-        // when
-        PagedProjectResponse actual = projectService.getPagedProjects(projectQueryCondition);
-
-        // then
-        assertAll(
-                () -> assertThat(actual.contents()).containsExactly(projectSummaryResponse1, projectSummaryResponse2,
-                        projectSummaryResponse3),
-                () -> assertThat(actual.hasNext()).isFalse(),
-                () -> assertThat(actual.nextCursor()).isNull()
-        );
-    }
-
 }

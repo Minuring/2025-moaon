@@ -1,42 +1,33 @@
 package moaon.backend.project.dto;
 
-import java.util.List;
+import lombok.*;
+import lombok.experimental.Accessors;
 import moaon.backend.global.domain.SearchKeyword;
 import moaon.backend.project.ProjectCursor;
+import moaon.backend.project.domain.Category;
 import moaon.backend.project.domain.ProjectSortType;
-import org.springframework.util.CollectionUtils;
+import moaon.backend.techStack.domain.TechStack;
 
-public record ProjectQueryCondition(
-        SearchKeyword search,
-        List<String> categoryNames,
-        List<String> techStackNames,
-        ProjectSortType projectSortType,
-        int limit,
-        ProjectCursor<?> cursor
-) {
+import java.util.List;
 
-    public static ProjectQueryCondition of(
-            String search,
-            List<String> categories,
-            List<String> techStacks,
-            String sortBy,
-            int limit,
-            String cursor
-    ) {
-        ProjectSortType sortType = ProjectSortType.from(sortBy);
-        return new ProjectQueryCondition(
-                new SearchKeyword(search),
-                categories == null ? List.of() : categories,
-                techStacks == null ? List.of() : techStacks,
-                sortType,
-                limit,
-                sortType.toCursor(cursor)
-        );
-    }
 
-    public boolean isEmptyFilter() {
-        return CollectionUtils.isEmpty(categoryNames) &&
-                CollectionUtils.isEmpty(techStackNames) &&
-                (search == null || !search.hasValue());
+@Builder
+@AllArgsConstructor
+@Accessors(fluent = true)
+@Getter
+@EqualsAndHashCode
+@ToString
+public final class ProjectQueryCondition {
+
+    private SearchKeyword search;
+    private List<Category> categories;
+    private List<TechStack> techStacks;
+    private ProjectSortType projectSortType;
+    @Builder.Default
+    private int limit = 20;
+    private ProjectCursor<?> cursor;
+
+    public ProjectQueryCondition() {
+        this.limit = 20;
     }
 }

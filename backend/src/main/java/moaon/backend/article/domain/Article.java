@@ -1,34 +1,7 @@
 package moaon.backend.article.domain;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import jakarta.persistence.*;
+import lombok.*;
 import moaon.backend.global.domain.BaseTimeEntity;
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
@@ -38,11 +11,15 @@ import moaon.backend.techStack.domain.TechStack;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @EqualsAndHashCode(of = "id", callSuper = false)
-@ToString(exclude = {"project", "techStacks", "topics"})
+@ToString(of = "id")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @Table(indexes = {
@@ -61,9 +38,9 @@ public class Article extends BaseTimeEntity {
     @Column(nullable = false)
     private String summary;
 
-    @OneToOne(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @Getter(AccessLevel.NONE)
-    private ArticleContent content;
+    // Article <> Content 연관관계의 PK-FK 공유 구조에서
+    // Content가 연관관계의 주인이 되는 게 자연스러운데, 이때
+    // EAGER FETCH를 피할 수 없으므로 JPA 연관관계를 설정하지 않음.
 
     @Column(nullable = false, length = 500)
     private String articleUrl;
@@ -100,7 +77,6 @@ public class Article extends BaseTimeEntity {
     public Article(
             String title,
             String summary,
-            String content,
             String articleUrl,
             LocalDateTime createdAt,
             Project project,
@@ -110,7 +86,6 @@ public class Article extends BaseTimeEntity {
     ) {
         this.title = title;
         this.summary = summary;
-        this.content = new ArticleContent(this, content);
         this.articleUrl = articleUrl;
         this.clicks = 0;
         this.createdAt = createdAt;
@@ -136,12 +111,5 @@ public class Article extends BaseTimeEntity {
         return techStacks.stream()
                 .map(ArticleTechStack::getTechStack)
                 .toList();
-    }
-
-    public String getContent() {
-        if (content == null) {
-            return "";
-        }
-        return content.getContent();
     }
 }

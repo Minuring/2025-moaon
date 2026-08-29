@@ -1,7 +1,10 @@
 package moaon.backend.article.domain;
 
-import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
+import moaon.backend.global.exception.custom.CustomException;
+import moaon.backend.global.exception.custom.ErrorCode;
+
+import java.util.Arrays;
 
 @RequiredArgsConstructor
 public enum ArticleSortType {
@@ -10,12 +13,19 @@ public enum ArticleSortType {
     CLICKS("clicks"),
     RELEVANCE("relevance");
 
-    private final String sortType;
+    private final String rawExpression;
 
-    public static ArticleSortType from(String sortType) {
+    private boolean matchesRawExpression(String rawExpression) {
+        return this.rawExpression.equalsIgnoreCase(rawExpression);
+    }
+
+    public static ArticleSortType from(String rawExpression) {
+        if (rawExpression == null) {
+            return CREATED_AT;
+        }
         return Arrays.stream(ArticleSortType.values())
-                .filter(articleSortBy -> articleSortBy.sortType.equals(sortType))
+                .filter(enumValue -> enumValue.matchesRawExpression(rawExpression))
                 .findAny()
-                .orElse(CREATED_AT);
+                .orElseThrow(() -> new CustomException(ErrorCode.SORT_NOT_FOUND));
     }
 }

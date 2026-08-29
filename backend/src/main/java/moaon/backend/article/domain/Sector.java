@@ -1,34 +1,14 @@
 package moaon.backend.article.domain;
 
-import static moaon.backend.article.domain.Topic.API_DESIGN;
-import static moaon.backend.article.domain.Topic.ARCHITECTURE_DESIGN;
-import static moaon.backend.article.domain.Topic.BUILD;
-import static moaon.backend.article.domain.Topic.BUNDLING;
-import static moaon.backend.article.domain.Topic.CI_CD;
-import static moaon.backend.article.domain.Topic.CODE_QUALITY;
-import static moaon.backend.article.domain.Topic.DATABASE;
-import static moaon.backend.article.domain.Topic.DEPLOYMENT_AND_OPERATION;
-import static moaon.backend.article.domain.Topic.DESIGN;
-import static moaon.backend.article.domain.Topic.ETC;
-import static moaon.backend.article.domain.Topic.MONITORING_AND_LOGGING;
-import static moaon.backend.article.domain.Topic.NATIVE;
-import static moaon.backend.article.domain.Topic.NETWORK;
-import static moaon.backend.article.domain.Topic.PERFORMANCE_OPTIMIZATION;
-import static moaon.backend.article.domain.Topic.PLANNING;
-import static moaon.backend.article.domain.Topic.RETROSPECTIVE;
-import static moaon.backend.article.domain.Topic.SDK;
-import static moaon.backend.article.domain.Topic.SECURITY;
-import static moaon.backend.article.domain.Topic.STATE_MANAGEMENT;
-import static moaon.backend.article.domain.Topic.TEAM_CULTURE;
-import static moaon.backend.article.domain.Topic.TECHNOLOGY_ADOPTION;
-import static moaon.backend.article.domain.Topic.TESTING;
-import static moaon.backend.article.domain.Topic.TROUBLESHOOTING;
-import static moaon.backend.article.domain.Topic.UI_UX_IMPROVEMENT;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import moaon.backend.global.exception.custom.CustomException;
+import moaon.backend.global.exception.custom.ErrorCode;
 
 import java.util.Arrays;
 import java.util.List;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+
+import static moaon.backend.article.domain.Topic.*;
 
 @RequiredArgsConstructor
 @Getter
@@ -105,10 +85,14 @@ public enum Sector {
     private final String name;
     private final List<Topic> topics;
 
+    private boolean matchesName(String name) {
+        return this.name.equalsIgnoreCase(name);
+    }
+
     public static Sector of(String name) {
         return Arrays.stream(Sector.values())
-                .filter(sector -> sector.getName().equalsIgnoreCase(name))
+                .filter(s -> s.matchesName(name))
                 .findAny()
-                .orElse(null);
+                .orElseThrow(() -> new CustomException(ErrorCode.SECTOR_NOT_FOUND));
     }
 }

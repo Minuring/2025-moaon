@@ -1,7 +1,6 @@
 package moaon.backend.search.indexing.outbox;
 
 import moaon.backend.article.domain.Article;
-import moaon.backend.fixture.ArticleFixtureBuilder;
 import moaon.backend.fixture.RepositoryHelper;
 import moaon.backend.search.indexing.outbox.IndexEvent.Action;
 import moaon.backend.search.query.ArticleDocument;
@@ -52,7 +51,7 @@ class IndexEventWorkerTest {
     @DisplayName("doIndexOneAsync: ES 클러스터가 Red면 처리하지 않는다")
     void doIndexOneAsyncSkipsWhenClusterRed() throws IOException {
         // given
-        Article article = repositoryHelper.save(new ArticleFixtureBuilder().build());
+        Article article = repositoryHelper.saveAnyArticle();
         indexEventRepository.merge(new IndexEvent(article.getId(), Action.INDEXING));
 
         stubEsClusterHealthy(false);
@@ -70,7 +69,7 @@ class IndexEventWorkerTest {
         // given
         stubEsClusterHealthy(true);
 
-        Article article = repositoryHelper.save(new ArticleFixtureBuilder().build());
+        Article article = repositoryHelper.saveAnyArticle();
         indexEventRepository.merge(new IndexEvent(article.getId(), Action.INDEXING));
         indexEventRepository.markAsProcessed(indexEventRepository.findByEntityId(article.getId()).orElseThrow());
 
@@ -87,7 +86,7 @@ class IndexEventWorkerTest {
         // given
         stubEsClusterHealthy(true);
 
-        Article article = repositoryHelper.save(new ArticleFixtureBuilder().build());
+        Article article = repositoryHelper.saveAnyArticle();
         indexEventRepository.merge(new IndexEvent(article.getId(), Action.INDEXING));
 
         // when
@@ -121,7 +120,7 @@ class IndexEventWorkerTest {
         // given
         stubEsClusterHealthy(true);
 
-        Article article = repositoryHelper.save(new ArticleFixtureBuilder().build());
+        Article article = repositoryHelper.saveAnyArticle();
         indexEventRepository.merge(new IndexEvent(article.getId(), Action.DELETED));
 
         // when
@@ -138,7 +137,7 @@ class IndexEventWorkerTest {
         // given
         stubEsClusterHealthy(true);
 
-        Article article = repositoryHelper.save(new ArticleFixtureBuilder().build());
+        Article article = repositoryHelper.saveAnyArticle();
         indexEventRepository.merge(new IndexEvent(article.getId(), Action.INDEXING));
         doThrow(new IOException("ES down")).when(indexingClient).upsert(any(ArticleDocument.class));
 
@@ -164,7 +163,7 @@ class IndexEventWorkerTest {
     @DisplayName("doIndexIfRequired: ES가 비정상이면 대상이 있어도 건너뛴다")
     void doIndexIfRequiredSkipsWhenClusterUnhealthy() throws IOException {
         // given
-        Article article = repositoryHelper.save(new ArticleFixtureBuilder().build());
+        Article article = repositoryHelper.saveAnyArticle();
         indexEventRepository.merge(new IndexEvent(article.getId(), Action.INDEXING));
 
         stubEsClusterHealthy(false);
@@ -183,7 +182,7 @@ class IndexEventWorkerTest {
         // given
         stubEsClusterHealthy(true);
 
-        Article article = repositoryHelper.save(new ArticleFixtureBuilder().build());
+        Article article = repositoryHelper.saveAnyArticle();
         indexEventRepository.merge(new IndexEvent(article.getId(), Action.INDEXING));
 
         // when
