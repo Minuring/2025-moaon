@@ -4,13 +4,14 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.article.domain.Article;
+import moaon.backend.article.domain.ArticleContent;
 import moaon.backend.article.domain.Sector;
-import moaon.backend.article.domain.Topic;
 import moaon.backend.article.draft.ArticleDraft;
 import moaon.backend.article.draft.ArticleDraftRepository;
-import moaon.backend.article.dto.ArticleCreateRequest;
+import moaon.backend.article.dto.ArticleCreateParams;
 import moaon.backend.article.dto.ArticleListResponse;
 import moaon.backend.article.dto.ArticleQueryCondition;
+import moaon.backend.article.repository.ArticleContentRepository;
 import moaon.backend.article.repository.ArticleRepository;
 import moaon.backend.article.repository.ArticleSearchResult;
 import moaon.backend.global.exception.custom.CustomException;
@@ -21,11 +22,10 @@ import moaon.backend.project.dto.ProjectArticleQueryCondition;
 import moaon.backend.project.dto.ProjectArticleResponse;
 import moaon.backend.project.repository.ProjectRepository;
 import moaon.backend.search.ElasticSearchService;
-import moaon.backend.techStack.TechStackResolver;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -37,9 +37,10 @@ public class ArticleService {
 
     private final ElasticSearchService elasticSearchService;
     private final ArticleRepository articleRepository;
+    private final ArticleContentRepository articleContentRepository;
     private final ArticleDraftRepository articleDraftRepository;
     private final ProjectRepository projectRepository;
-    private final TechStackResolver techStackResolver;
+    private final TransactionTemplate transactionTemplate;
 
     @CircuitBreaker(name = "articleSearchCB", fallbackMethod = "getPagedArticlesFromDB")
     public ArticleListResponse getPagedArticles(ArticleQueryCondition queryCondition) {
@@ -47,9 +48,13 @@ public class ArticleService {
         return ArticleListResponse.from(result);
     }
 
-    public ArticleListResponse getPagedArticlesFromDB(ArticleQueryCondition queryCondition, Exception e) {
-        ArticleSearchResult result = articleRepository.search(queryCondition, null);
-        return ArticleListResponse.from(result);
+    // CircuitBreaker의 fallbackMethod는 프록시가 아닌 원본 객체에 리플렉션으로 직접 호출되어
+    // 클래스 레벨 @Transactional을 타지 않으므로, TransactionTemplate으로 직접 트랜잭션을 연다.
+    private ArticleListResponse getPagedArticlesFromDB(ArticleQueryCondition queryCondition, Exception e) {
+        return transactionTemplate.execute(status -> {
+            ArticleSearchResult result = articleRepository.search(queryCondition, null);
+            return ArticleListResponse.from(result);
+        });
     }
 
     @CircuitBreaker(name = "articleSearchCB", fallbackMethod = "getByProjectIdFromDB")
@@ -61,12 +66,14 @@ public class ArticleService {
         return ProjectArticleResponse.of(filteredArticles.articles(), articleCountBySector);
     }
 
-    public ProjectArticleResponse getByProjectIdFromDB(long id, ProjectArticleQueryCondition condition, Exception e) {
-        Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
-        ArticleSearchResult filteredArticles = articleRepository.search(condition.toArticleCondition(), project.getId());
-        Map<Sector, Long> articleCountBySector = project.countArticlesGroupBySector();
-        return ProjectArticleResponse.of(filteredArticles.articles(), articleCountBySector);
+    private ProjectArticleResponse getByProjectIdFromDB(long id, ProjectArticleQueryCondition condition, Exception e) {
+        return transactionTemplate.execute(status -> {
+            Project project = projectRepository.findById(id)
+                    .orElseThrow(() -> new CustomException(ErrorCode.PROJECT_NOT_FOUND));
+            ArticleSearchResult filteredArticles = articleRepository.search(condition.toArticleCondition(), project.getId());
+            Map<Sector, Long> articleCountBySector = project.countArticlesGroupBySector();
+            return ProjectArticleResponse.of(filteredArticles.articles(), articleCountBySector);
+        });
     }
 
     @Transactional
@@ -79,35 +86,22 @@ public class ArticleService {
     }
 
     @Transactional
-    public void save(List<ArticleCreateRequest> requests, Member member) {
-        for (ArticleCreateRequest request : requests) {
-            Project project = projectRepository.findById(request.projectId()).orElseThrow(
-                    () -> new CustomException(ErrorCode.PROJECT_NOT_FOUND)
-            );
-            if (!member.equals(project.getAuthor())) {
+    public void save(List<ArticleCreateParams> params, Member member) {
+        for (ArticleCreateParams param : params) {
+            Project project = projectRepository.getById(param.projectId());
+            if (!project.isOwnedBy(member)) {
                 throw new CustomException(ErrorCode.UNAUTHORIZED_MEMBER);
             }
 
-            ArticleDraft draft = articleDraftRepository.findById(request.draftId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_DRAFT_NOT_FOUND));
+            ArticleDraft draft = articleDraftRepository.getById(param.draftId());
             if (!draft.isOwnedBy(member)) {
                 throw new CustomException(ErrorCode.UNAUTHORIZED_MEMBER);
             }
 
-            Article article = new Article(
-                    request.title(),
-                    request.summary(),
-                    draft.getCrawledContent(),
-                    draft.getUrl(),
-                    LocalDateTime.now(),
-                    project,
-                    Sector.of(request.sector()),
-                    request.topics().stream().map(Topic::of).toList(),
-                    techStackResolver.resolve(request.techStacks())
-            );
-            Article saved = articleRepository.save(article);
+            Article article = articleRepository.save(param.createArticle(project, draft));
+            articleContentRepository.save(new ArticleContent(article, draft.getCrawledContent()));
             articleDraftRepository.delete(draft);
-            elasticSearchService.requestIndex(saved.getId());
+            elasticSearchService.requestIndex(article.getId());
         }
     }
 }

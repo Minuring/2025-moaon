@@ -34,15 +34,15 @@ public class ArticleRepository {
     }
 
     @Transactional(readOnly = true)
-    public ArticleSearchResult search(ArticleQueryCondition condition, Long projectId) {
-        List<Article> fetched = articleRetrievalQuery.search(condition, projectId);
+    public ArticleSearchResult search(ArticleQueryCondition condition, Long scopeProjectId) {
+        List<Article> fetched = articleRetrievalQuery.search(condition, scopeProjectId);
 
         boolean hasNext = fetched.size() > condition.limit();
         List<Article> articles = hasNext ? fetched.subList(0, condition.limit()) : fetched;
 
         return new ArticleSearchResult(
                 articles.stream().map(ArticleDto::from).toList(),
-                articleRetrievalQuery.count(condition, projectId),
+                articleRetrievalQuery.count(condition, scopeProjectId),
                 hasNext,
                 hasNext ? buildCursor(articles.getLast(), condition.sortType()) : null
         );

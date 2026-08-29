@@ -1,20 +1,22 @@
 package moaon.backend.search.query;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-import java.util.List;
 import moaon.backend.article.domain.ArticleCursor;
 import moaon.backend.article.domain.ArticleSortType;
 import moaon.backend.article.domain.Sector;
 import moaon.backend.article.domain.Topic;
 import moaon.backend.article.dto.ArticleQueryCondition;
 import moaon.backend.global.domain.SearchKeyword;
+import moaon.backend.techStack.domain.TechStack;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class ElasticQueryBuilderTest {
 
@@ -44,7 +46,7 @@ class ElasticQueryBuilderTest {
     @Test
     void withEmptyText_throwsException() {
         NativeQuery query = new ElasticQueryBuilder()
-                .withTextSearch(new SearchKeyword(""))
+                .withTextSearch(null)
                 .build();
 
         assertThat(query.getQuery().toString()).doesNotContain("multi_match", "query");
@@ -122,7 +124,7 @@ class ElasticQueryBuilderTest {
                         new SearchKeyword("테스트"),            // search
                         Sector.BE,                                  // sector
                         List.of(Topic.DATABASE),                    // topics
-                        List.of("mysql"),                       // techStacks
+                        List.of(new TechStack("mysql")),      // techStacks
                         ArticleSortType.CLICKS,                     // sort
                         10,                                         // limit
                         new ArticleCursor(10.0, 5L)  // cursor

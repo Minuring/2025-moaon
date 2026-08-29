@@ -9,6 +9,7 @@ import moaon.backend.article.domain.Sector;
 import moaon.backend.article.domain.Topic;
 import moaon.backend.article.dto.ArticleQueryCondition;
 import moaon.backend.global.domain.SearchKeyword;
+import moaon.backend.techStack.domain.TechStack;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -55,7 +56,7 @@ class ElasticQueryBuilder {
     }
 
     public ElasticQueryBuilder withTextSearch(SearchKeyword searchKeyword) {
-        if (searchKeyword != null && searchKeyword.hasValue()) {
+        if (searchKeyword != null) {
             musts.add(createTextMatchQuery(searchKeyword));
         }
         return this;
@@ -82,16 +83,9 @@ class ElasticQueryBuilder {
         return this;
     }
 
-    public ElasticQueryBuilder withTechStacksAndMatch(List<String> techStackNames) {
-        if (techStackNames != null && !techStackNames.isEmpty()) {
-            filters.add(createTechStacksAndQuery(techStackNames));
-        }
-        return this;
-    }
-
-    public ElasticQueryBuilder withTechStacksOrMatch(List<String> techStackNames) {
-        if (techStackNames != null && !techStackNames.isEmpty()) {
-            filters.add(createTechStacksOrQuery(techStackNames));
+    public ElasticQueryBuilder withTechStacksAndMatch(List<TechStack> techStacks) {
+        if (techStacks != null && !techStacks.isEmpty()) {
+            filters.add(createTechStacksAndQuery(techStacks));
         }
         return this;
     }
@@ -120,7 +114,7 @@ class ElasticQueryBuilder {
     public ElasticQueryBuilder withQueryCondition(ArticleQueryCondition condition) {
         return this.withTextSearch(condition.search())
                 .withSector(condition.sector())
-                .withTechStacksAndMatch(condition.techStackNames())
+                .withTechStacksAndMatch(condition.techStacks())
                 .withTopicsAndMatch(condition.topics())
                 .withSort(condition.sortType())
                 .withPagination(condition.limit(), condition.cursor(), condition.sortType());
@@ -161,10 +155,6 @@ class ElasticQueryBuilder {
     }
 
     private Query createTextMatchQuery(SearchKeyword searchKeyword) {
-        if (!searchKeyword.hasValue()) {
-            throw new IllegalArgumentException("검색어가 비어있습니다.");
-        }
-
         List<Query> mustQueries = new ArrayList<>();
 
         // 1) 마지막 이전 토큰들은 모두 exact 필수
@@ -253,18 +243,11 @@ class ElasticQueryBuilder {
         return BoolQuery.of(b -> b.should(topicQueries))._toQuery();
     }
 
-    private Query createTechStacksAndQuery(List<String> techStackName) {
-        List<Query> topicQueries = techStackName.stream()
+    private Query createTechStacksAndQuery(List<TechStack> techStacks) {
+        List<Query> topicQueries = techStacks.stream()
                 .map(this::createSingleTechStackQuery)
                 .toList();
         return BoolQuery.of(b -> b.filter(topicQueries))._toQuery();
-    }
-
-    private Query createTechStacksOrQuery(List<String> techStackName) {
-        List<Query> topicQueries = techStackName.stream()
-                .map(this::createSingleTechStackQuery)
-                .toList();
-        return BoolQuery.of(b -> b.should(topicQueries))._toQuery();
     }
 
     private Query createSingleTopicQuery(Topic topic) {
@@ -274,10 +257,10 @@ class ElasticQueryBuilder {
         )._toQuery();
     }
 
-    private Query createSingleTechStackQuery(String techStackName) {
+    private Query createSingleTechStackQuery(TechStack techStack) {
         return TermQuery.of(t -> t
                 .field("techStacks")
-                .value(techStackName)
+                .value(techStack.getName())
         )._toQuery();
     }
 

@@ -1,8 +1,9 @@
 package moaon.backend.techStack;
 
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import moaon.backend.global.exception.custom.CustomException;
+import moaon.backend.global.exception.custom.ErrorCode;
 import moaon.backend.techStack.domain.TechStack;
 import org.springframework.stereotype.Component;
 
@@ -15,9 +16,8 @@ public class TechStackResolver {
     public List<TechStack> resolve(List<String> rawNames) {
         return rawNames.stream()
                 .map(TechStack::normalize)
-                .map(techStackRepository::findByName)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .map(name -> techStackRepository.findByName(name)
+                        .orElseThrow(() -> new CustomException(ErrorCode.TECHSTACK_NOT_FOUND)))
                 .toList();
     }
 }

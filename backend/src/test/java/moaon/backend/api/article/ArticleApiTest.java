@@ -13,11 +13,12 @@ import moaon.backend.article.draft.ArticleDraftRepository;
 import moaon.backend.article.dto.ArticleCreateRequest;
 import moaon.backend.article.dto.ArticleDto;
 import moaon.backend.article.dto.ArticleListResponse;
-import moaon.backend.fixture.*;
+import moaon.backend.fixture.FakeArticleSearchResult;
+import moaon.backend.fixture.Fixtures;
+import moaon.backend.fixture.RepositoryHelper;
 import moaon.backend.global.config.QueryDslConfig;
 import moaon.backend.member.Member;
 import moaon.backend.member.service.JwtTokenService;
-import moaon.backend.member.service.MemberService;
 import moaon.backend.project.domain.Project;
 import moaon.backend.search.ElasticSearchService;
 import moaon.backend.techStack.domain.TechStack;
@@ -47,9 +48,6 @@ public class ArticleApiTest extends BaseApiTest {
     private JwtTokenService jwtTokenService;
 
     @MockitoBean
-    private MemberService memberService;
-
-    @MockitoBean
     private ElasticSearchService elasticSearchService;
 
     private String token;
@@ -58,8 +56,7 @@ public class ArticleApiTest extends BaseApiTest {
 
     @BeforeEach
     void cookieSetUp() {
-        member = repositoryHelper.save(Fixture.anyMember());
-
+        member = repositoryHelper.save(Fixtures.anyMember());
         token = jwtTokenService.createToken(member.getId());
     }
 
@@ -68,13 +65,10 @@ public class ArticleApiTest extends BaseApiTest {
     void save() {
         // given
         Project savedProject = repositoryHelper.save(
-                new ProjectFixtureBuilder()
+                Fixtures.projectBuilder()
                         .author(member)
                         .build()
         );
-
-        Mockito.when(memberService.getUserByToken(token)).thenReturn(member);
-
         repositoryHelper.save(new TechStack("react"));
 
         ArticleDraft draft = articleDraftRepository.save(
@@ -109,38 +103,38 @@ public class ArticleApiTest extends BaseApiTest {
         Sector unfilteredSector = Sector.FE;
         Topic filteredTopic = Topic.DATABASE;
         Topic unfilteredTopic = Topic.API_DESIGN;
-        TechStack filteredTechStack = Fixture.anyTechStack();
-        TechStack unfilteredTechStack = Fixture.anyTechStack();
+        TechStack filteredTechStack = repositoryHelper.saveAnyTechStack();
+        TechStack unfilteredTechStack = repositoryHelper.saveAnyTechStack();
         String filteredSearch = "moa";
         String unfilteredSearch = "momo";
 
-        Project project = repositoryHelper.save(
-                new ProjectFixtureBuilder()
-                        .build()
-        );
+        Project project = repositoryHelper.saveAnyProject();
 
+        // sector 비대상
         repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .sector(unfilteredSector)
-                        .content(filteredSearch)
                         .techStacks(List.of(filteredTechStack))
                         .project(project)
                         .clicks(4)
                         .topics(filteredTopic)
-                        .build()
+                        .build(),
+                filteredSearch
         );
+        // techstack 비대상
         repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .techStacks(List.of(unfilteredTechStack))
-                        .content(filteredSearch)
                         .sector(filteredSector)
                         .project(project)
                         .clicks(4)
                         .topics(filteredTopic)
-                        .build()
+                        .build(),
+                filteredSearch
         );
+        // title 비대상
         repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .title(unfilteredSearch)
                         .sector(filteredSector)
                         .techStacks(List.of(filteredTechStack))
@@ -149,8 +143,9 @@ public class ArticleApiTest extends BaseApiTest {
                         .topics(filteredTopic)
                         .build()
         );
+        // summary 비대상
         repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .summary(unfilteredSearch)
                         .sector(filteredSector)
                         .techStacks(List.of(filteredTechStack))
@@ -159,38 +154,42 @@ public class ArticleApiTest extends BaseApiTest {
                         .topics(filteredTopic)
                         .build()
         );
+        // content 비대상
         repositoryHelper.save(
-                new ArticleFixtureBuilder()
-                        .content(unfilteredSearch)
+                Fixtures.articleBuilder()
                         .sector(filteredSector)
                         .techStacks(List.of(unfilteredTechStack))
                         .project(project)
                         .clicks(4)
                         .topics(filteredTopic)
-                        .build()
+                        .build(),
+                unfilteredSearch
         );
+        // topic 비대상
         repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .topics(unfilteredTopic)
-                        .content(filteredSearch)
                         .sector(filteredSector)
                         .techStacks(List.of(filteredTechStack))
                         .project(project)
                         .clicks(4)
-                        .build()
+                        .build(),
+                filteredSearch
         );
+        // filter 전부 만족, clicks 1 (요청의 limit가 2이므로 제외되어야 함)
         Article articleClickRankThird = repositoryHelper.save(
-                new ArticleFixtureBuilder()
-                        .content(filteredSearch)
+                Fixtures.articleBuilder()
                         .sector(filteredSector)
                         .techStacks(List.of(filteredTechStack))
                         .project(project)
                         .clicks(1)
                         .topics(filteredTopic)
-                        .build()
+                        .build(),
+                filteredSearch
         );
+        // filter 전부 만족, clicks 2
         Article articleClickRankSecond = repositoryHelper.save(
-                new ArticleFixtureBuilder()
+                Fixtures.articleBuilder()
                         .title(filteredSearch)
                         .sector(filteredSector)
                         .techStacks(List.of(filteredTechStack))
@@ -199,15 +198,16 @@ public class ArticleApiTest extends BaseApiTest {
                         .topics(filteredTopic)
                         .build()
         );
+        // filter 전부 만족, clicks 3
         Article articleClickRankFirst = repositoryHelper.save(
-                new ArticleFixtureBuilder()
-                        .content(filteredSearch)
+                Fixtures.articleBuilder()
                         .sector(filteredSector)
                         .techStacks(List.of(filteredTechStack))
                         .project(project)
                         .clicks(3)
                         .topics(filteredTopic)
-                        .build()
+                        .build(),
+                filteredSearch
         );
 
         Mockito.when(elasticSearchService.search(Mockito.any()))
@@ -239,7 +239,7 @@ public class ArticleApiTest extends BaseApiTest {
     @Test
     void updateArticleClicks() {
         // given
-        Article article = repositoryHelper.save(new ArticleFixtureBuilder().build());
+        Article article = repositoryHelper.saveAnyArticle();
 
         // when 첫 클릭 - 기본 응답 + 클릭수 증가 + 쿠키 설정
         ValidatableResponse firstResponse = RestAssured.given().log().all()
@@ -251,7 +251,7 @@ public class ArticleApiTest extends BaseApiTest {
         String cookieName = "clicked_articles_" + article.getId();
         String cookie = firstResponse.extract().cookie(cookieName);
         // then 클릭수 및 쿠키 검증을 위해 서비스에서 직접 조회
-        Article firstResult = repositoryHelper.getById(article.getId());
+        Article firstResult = repositoryHelper.getArticleById(article.getId());
         assertAll("아티클 클릭수 증가 및 쿠키 설정 검증",
                 () -> assertThat(firstResult.getClicks()).isEqualTo(1),
                 () -> assertThat(cookie).isNotNull()
@@ -264,7 +264,7 @@ public class ArticleApiTest extends BaseApiTest {
                 .when().post("/articles/{id}/clicks")
                 .then().log().all()
                 .statusCode(200);
-        Article secondResult = repositoryHelper.getById(article.getId());
+        Article secondResult = repositoryHelper.getArticleById(article.getId());
 
         // then 클릭수 미증가 검증
         assertThat(secondResult.getClicks()).isEqualTo(1);

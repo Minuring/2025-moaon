@@ -2,6 +2,7 @@ package moaon.backend.search.indexing.outbox;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import moaon.backend.article.repository.ArticleContentRepository;
 import moaon.backend.article.repository.ArticleRepository;
 import moaon.backend.search.indexing.outbox.IndexEvent.Action;
 import moaon.backend.search.query.ArticleDocument;
@@ -29,6 +30,7 @@ public class IndexEventWorker {
     private final ArticleRepository articleRepository;
     private final ElasticIndexingClient indexingClient;
     private final TransactionTemplate transactionTemplate;
+    private final ArticleContentRepository articleContentRepository;
 
     //TODO: 배치로 변경
     @Scheduled(fixedDelay = 60, timeUnit = TimeUnit.SECONDS)
@@ -82,7 +84,7 @@ public class IndexEventWorker {
         } else {
             ArticleDocument doc = transactionTemplate.execute(status ->
                     articleRepository.findById(e.getEntityId())
-                            .map(ArticleDocument::new)
+                            .map(a -> new ArticleDocument(a, articleContentRepository.findById(a.getId()).getContent()))
                             .orElse(null));
             if (doc == null) {
                 indexingClient.delete(e.getEntityId());

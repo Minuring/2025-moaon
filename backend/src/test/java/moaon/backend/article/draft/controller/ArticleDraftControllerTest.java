@@ -18,7 +18,7 @@ import moaon.backend.article.draft.ArticleDraft;
 import moaon.backend.article.draft.dto.ArticleDraftAnalyzeResponse;
 import moaon.backend.article.draft.dto.ArticleDraftCreateResponse;
 import moaon.backend.article.draft.ArticleDraftRepository;
-import moaon.backend.fixture.Fixture;
+import moaon.backend.fixture.Fixtures;
 import moaon.backend.fixture.RepositoryHelper;
 import moaon.backend.member.Member;
 import moaon.backend.member.service.JwtTokenService;
@@ -58,7 +58,7 @@ class ArticleDraftControllerTest extends BaseApiTest {
 
     @BeforeEach
     void setUpMember() {
-        member = repositoryHelper.save(Fixture.anyMember());
+        member = repositoryHelper.save(Fixtures.anyMember());
         token = jwtTokenService.createToken(member.getId());
     }
 

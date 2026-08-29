@@ -1,25 +1,11 @@
 package moaon.backend.project;
 
-import static moaon.backend.member.QMember.member;
-import static moaon.backend.project.domain.QCategory.category;
-import static moaon.backend.project.domain.QProject.project;
-import static moaon.backend.project.domain.QProjectCategory.projectCategory;
-import static moaon.backend.techStack.domain.QProjectTechStack.projectTechStack;
-import static moaon.backend.techStack.domain.QTechStack.techStack;
-
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.SimpleExpression;
 import com.querydsl.core.types.dsl.Wildcard;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import moaon.backend.global.domain.SearchKeyword;
 import moaon.backend.project.domain.Project;
@@ -31,6 +17,17 @@ import moaon.backend.project.repository.ProjectFullTextSearchHQLFunction;
 import moaon.backend.techStack.domain.ProjectTechStack;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
+
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static moaon.backend.member.QMember.member;
+import static moaon.backend.project.domain.QCategory.category;
+import static moaon.backend.project.domain.QProject.project;
+import static moaon.backend.project.domain.QProjectCategory.projectCategory;
+import static moaon.backend.techStack.domain.QProjectTechStack.projectTechStack;
+import static moaon.backend.techStack.domain.QTechStack.techStack;
 
 @Repository
 @RequiredArgsConstructor
@@ -113,7 +110,7 @@ public class ProjectDao {
     }
 
     public Set<Long> findProjectIdsBySearchKeyword(FilteringIds filteringIds, SearchKeyword searchKeyword) {
-        if (searchKeyword == null || !searchKeyword.hasValue()) {
+        if (searchKeyword == null) {
             return new HashSet<>();
         }
 
@@ -153,7 +150,7 @@ public class ProjectDao {
     }
 
     private BooleanExpression satisfiesMatchScore(SearchKeyword searchKeyword) {
-        if (searchKeyword == null || !searchKeyword.hasValue()) {
+        if (searchKeyword == null) {
             return null;
         }
         double minimumMatchScore = 0.0;

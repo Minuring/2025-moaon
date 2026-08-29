@@ -10,10 +10,13 @@ import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
-import moaon.backend.article.domain.*;
+import moaon.backend.article.domain.Article;
+import moaon.backend.article.domain.ArticleCursor;
+import moaon.backend.article.domain.ArticleSortType;
+import moaon.backend.article.domain.Topic;
 import moaon.backend.article.dto.ArticleQueryCondition;
 import moaon.backend.global.domain.SearchKeyword;
-import org.springframework.util.CollectionUtils;
+import moaon.backend.techStack.domain.TechStack;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -43,9 +46,7 @@ class ArticleRetrievalQuery {
 
     public List<Article> search(ArticleQueryCondition condition, @Nullable Long projectId) {
         SearchKeyword search = condition.search();
-        boolean hasSearch = search != null && search.hasValue();
-
-        return hasSearch
+        return search != null
                 ? fetchWithScore(condition, projectId, search)
                 : fetchWithoutScore(condition, projectId);
     }
@@ -69,7 +70,7 @@ class ArticleRetrievalQuery {
         List<Tuple> tuples = jpaQueryFactory
                 .select(article, score)
                 .from(article)
-                .join(article.content, articleContent)
+                .join(articleContent).on(articleContent.id.eq(article.id))
                 .where(
                         baseConditions(condition, projectId),
                         cursorClause(condition, search)
@@ -92,8 +93,8 @@ class ArticleRetrievalQuery {
                 .select(article.count())
                 .from(article);
 
-        if (condition.search().hasValue()) {
-            query.join(article.content, articleContent);
+        if (condition.search() != null) {
+            query.join(articleContent).on(articleContent.id.eq(article.id));
         }
 
         Long count = query
@@ -105,10 +106,10 @@ class ArticleRetrievalQuery {
     private BooleanBuilder baseConditions(ArticleQueryCondition condition, Long projectId) {
         BooleanBuilder where = new BooleanBuilder();
         where.and(projectIdEq(projectId));
-        where.and(sectorEq(condition.sector()));
-        where.and(containsAllTopics(condition.topics()));
-        where.and(hasAllTechStacks(condition.techStackNames()));
-        if (condition.search().hasValue()) {
+        where.and(sectorEq(condition));
+        where.and(containsAllTopics(condition));
+        where.and(hasAllTechStacks(condition));
+        if (condition.search() != null) {
             where.and(matchScore(condition.search()).gt(MINIMUM_MATCH_SCORE));
         }
         return where;
@@ -121,32 +122,32 @@ class ArticleRetrievalQuery {
         return article.project.id.eq(projectId);
     }
 
-    private BooleanExpression sectorEq(Sector sector) {
-        if (sector == null) {
+    private BooleanExpression sectorEq(ArticleQueryCondition condition) {
+        if (!condition.hasSector()) {
             return null;
         }
-        return article.sector.eq(sector);
+        return article.sector.eq(condition.sector());
     }
 
-    private BooleanExpression containsAllTopics(List<Topic> topics) {
-        if (CollectionUtils.isEmpty(topics)) {
+    private BooleanExpression containsAllTopics(ArticleQueryCondition condition) {
+        if (!condition.hasTopics()) {
             return null;
         }
         BooleanExpression where = null;
-        for (Topic topic : topics) {
+        for (Topic topic : condition.topics()) {
             BooleanExpression expression = article.topics.contains(topic);
             where = where == null ? expression : where.and(expression);
         }
         return where;
     }
 
-    private BooleanExpression hasAllTechStacks(List<String> techStackNames) {
-        if (CollectionUtils.isEmpty(techStackNames)) {
+    private BooleanExpression hasAllTechStacks(ArticleQueryCondition condition) {
+        if (!condition.hasTechStacks()) {
             return null;
         }
         BooleanExpression where = null;
-        for (String techStackName : techStackNames) {
-            BooleanExpression expression = article.techStacks.any().techStack.name.eq(techStackName);
+        for (TechStack techStack : condition.techStacks()) {
+            BooleanExpression expression = article.techStacks.any().techStack.name.eq(techStack.getName());
             where = where == null ? expression : where.and(expression);
         }
         return where;
@@ -175,10 +176,10 @@ class ArticleRetrievalQuery {
     }
 
     private BooleanExpression cursorClause(ArticleQueryCondition condition, @Nullable SearchKeyword search) {
-        ArticleCursor cursor = condition.cursor();
-        if (cursor == null) {
+        if (!condition.hasCursor()) {
             return null;
         }
+        ArticleCursor cursor = condition.cursor();
         ArticleSortType sortType = condition.sortType();
 
         if (sortType == ArticleSortType.CLICKS) {
@@ -202,11 +203,11 @@ class ArticleRetrievalQuery {
     private OrderSpecifier<?>[] toOrderBy(ArticleSortType sortType, @Nullable SearchKeyword search) {
         if (sortType == ArticleSortType.RELEVANCE && search != null) {
             NumberExpression<Double> score = matchScore(search);
-            return new OrderSpecifier<?>[]{score.desc(), article.id.desc()};
+            return new OrderSpecifier<?>[]{score.desc(), article.id.asc()};
         }
         if (sortType == ArticleSortType.CLICKS) {
-            return new OrderSpecifier<?>[]{article.clicks.desc(), article.id.desc()};
+            return new OrderSpecifier<?>[]{article.clicks.desc(), article.id.asc()};
         }
-        return new OrderSpecifier<?>[]{article.createdAt.desc(), article.id.desc()};
+        return new OrderSpecifier<?>[]{article.createdAt.desc(), article.id.asc()};
     }
 }

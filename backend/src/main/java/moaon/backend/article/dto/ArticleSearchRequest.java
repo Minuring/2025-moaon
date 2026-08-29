@@ -2,16 +2,11 @@ package moaon.backend.article.dto;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
-import moaon.backend.article.domain.ArticleCursor;
-import moaon.backend.article.domain.ArticleSortType;
-import moaon.backend.article.domain.Sector;
-import moaon.backend.article.domain.Topic;
-import moaon.backend.global.domain.SearchKeyword;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Setter
 @Getter
@@ -23,25 +18,30 @@ public class ArticleSearchRequest {
     private String search;
     @Min(1)
     @Max(100)
-    private int limit = 1;
+    private int limit = 20;
     private String cursor;
 
-    public ArticleQueryCondition toCondition() {
-        return new ArticleQueryCondition(
-                new SearchKeyword(search),
-                Sector.of(sector),
-                topicsToEnum(),
-                techStacks,
-                ArticleSortType.from(sort),
-                limit,
-                cursor == null ? null : new ArticleCursor(cursor)
-        );
+    public boolean hasSort() {
+        return sort != null;
     }
 
-    private List<Topic> topicsToEnum() {
-        return topics.stream()
-                .map(Topic::of)
-                .filter(Objects::nonNull)
-                .toList();
+    public boolean hasCursor() {
+        return cursor != null;
+    }
+
+    public boolean hasSearch() {
+        return search != null;
+    }
+
+    public boolean hasTechStacks() {
+        return !techStacks.isEmpty();
+    }
+
+    public boolean hasSector() {
+        return sector != null;
+    }
+
+    public boolean hasTopics() {
+        return !topics.isEmpty();
     }
 }

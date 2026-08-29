@@ -1,15 +1,7 @@
 package moaon.backend.project.domain;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import moaon.backend.article.domain.Sector;
-import moaon.backend.fixture.ArticleFixtureBuilder;
-import moaon.backend.fixture.Fixture;
+import moaon.backend.fixture.Fixtures;
 import moaon.backend.global.exception.custom.CustomException;
 import moaon.backend.global.exception.custom.ErrorCode;
 import moaon.backend.member.Member;
@@ -17,9 +9,17 @@ import moaon.backend.techStack.domain.TechStack;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 class ProjectTest {
 
-    private final Member author = Fixture.anyMember();
+    private final Member author = Fixtures.anyMember();
     private final Images images = new Images(List.of("url"));
     private final List<TechStack> techStacks = List.of(new TechStack("Spring"));
     private final List<Category> categories = List.of(new Category("Web"));
@@ -197,9 +197,9 @@ class ProjectTest {
     void getArticleIds() {
         Project project = Project.builder()
                 .articles(List.of(
-                        new ArticleFixtureBuilder().id(1L).build(),
-                        new ArticleFixtureBuilder().id(2L).build(),
-                        new ArticleFixtureBuilder().id(3L).build()
+                        Fixtures.articleBuilder().id(1L).build(),
+                        Fixtures.articleBuilder().id(2L).build(),
+                        Fixtures.articleBuilder().id(3L).build()
                 )).build();
 
         assertThat(project.getArticleIds())
@@ -212,9 +212,9 @@ class ProjectTest {
         // given
         Project project = Project.builder()
                 .articles(List.of(
-                        new ArticleFixtureBuilder().sector(Sector.BE).build(),
-                        new ArticleFixtureBuilder().sector(Sector.BE).build(),
-                        new ArticleFixtureBuilder().sector(Sector.FE).build())
+                        Fixtures.articleBuilder().sector(Sector.BE).build(),
+                        Fixtures.articleBuilder().sector(Sector.BE).build(),
+                        Fixtures.articleBuilder().sector(Sector.FE).build())
                 ).build();
 
         // when
@@ -232,7 +232,7 @@ class ProjectTest {
         // given
         Project project = Project.builder()
                 .articles(List.of(
-                        new ArticleFixtureBuilder().sector(Sector.BE).build()
+                        Fixtures.articleBuilder().sector(Sector.BE).build()
                 )).build();
 
         // when

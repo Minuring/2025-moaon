@@ -1,12 +1,18 @@
 package moaon.backend.search.query;
 
-import static java.util.stream.Collectors.toSet;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import lombok.*;
+import moaon.backend.article.domain.Article;
+import moaon.backend.article.domain.Sector;
+import moaon.backend.article.domain.Topic;
+import moaon.backend.techStack.domain.TechStack;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.*;
+import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -15,26 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import moaon.backend.article.domain.Article;
-import moaon.backend.article.domain.Sector;
-import moaon.backend.article.domain.Topic;
-import moaon.backend.techStack.domain.TechStack;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.elasticsearch.annotations.Alias;
-import org.springframework.data.elasticsearch.annotations.DateFormat;
-import org.springframework.data.elasticsearch.annotations.Document;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
-import org.springframework.data.elasticsearch.annotations.InnerField;
-import org.springframework.data.elasticsearch.annotations.MultiField;
-import org.springframework.data.elasticsearch.annotations.Setting;
-import org.springframework.util.CollectionUtils;
+import static java.util.stream.Collectors.toSet;
 
 @Document(indexName = "articles_idx", aliases = {@Alias(value = "articles", isWriteIndex = true)})
 @Setting(settingPath = "/elasticsearch/article-settings.json")
@@ -109,11 +96,11 @@ public class ArticleDocument {
     @Field(type = FieldType.Keyword)
     private String url;
 
-    public ArticleDocument(Article article) {
+    public ArticleDocument(Article article, String content) {
         this.id = article.getId();
         this.title = article.getTitle();
         this.summary = article.getSummary();
-        this.content = article.getContent();
+        this.content = content;
         this.sector = article.getSector();
         this.topics = new HashSet<>(article.getTopics());
         this.techStacks = setTechStacks(article.getTechStacks());

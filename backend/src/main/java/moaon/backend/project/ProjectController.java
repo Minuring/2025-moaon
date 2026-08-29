@@ -4,31 +4,23 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 import moaon.backend.article.ArticleService;
 import moaon.backend.global.CountCooldownCookieManager;
-import moaon.backend.project.dto.PagedProjectResponse;
-import moaon.backend.project.dto.ProjectArticleQueryCondition;
-import moaon.backend.project.dto.ProjectArticleResponse;
-import moaon.backend.project.dto.ProjectCreateRequest;
-import moaon.backend.project.dto.ProjectCreateResponse;
-import moaon.backend.project.dto.ProjectDetailResponse;
-import moaon.backend.project.dto.ProjectQueryCondition;
-import moaon.backend.project.dto.ProjectSummaryResponse;
+import moaon.backend.global.domain.SearchKeyword;
+import moaon.backend.project.domain.ProjectSortType;
+import moaon.backend.project.dto.*;
+import moaon.backend.techStack.TechStackResolver;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/projects")
+@RequiredArgsConstructor
 public class ProjectController {
 
     private static final String VIEW_COOKIE_NAME_PREFIX = "viewed_projects_";
@@ -37,16 +29,8 @@ public class ProjectController {
     private final CountCooldownCookieManager cookieManager;
     private final ProjectService projectService;
     private final ArticleService articleService;
-
-    public ProjectController(
-            CountCooldownCookieManager cookieManager,
-            ProjectService projectService,
-            ArticleService articleService
-    ) {
-        this.cookieManager = cookieManager;
-        this.projectService = projectService;
-        this.articleService = articleService;
-    }
+    private final TechStackResolver techStackResolver;
+    private final CategoryResolver categoryResolver;
 
     @PostMapping
     public ResponseEntity<ProjectCreateResponse> saveProject(
@@ -92,14 +76,16 @@ public class ProjectController {
             @RequestParam(value = "limit") @Validated @Max(100) int limit,
             @RequestParam(value = "cursor", required = false) String cursor
     ) {
-        ProjectQueryCondition projectQueryCondition = ProjectQueryCondition.of(
-                search,
-                categories,
-                techStacks,
-                sortType,
-                limit,
-                cursor
-        );
+        ProjectSortType projectSortType = ProjectSortType.from(sortType);
+        ProjectQueryCondition projectQueryCondition = ProjectQueryCondition.builder()
+                .search(search == null ? null : new SearchKeyword(search))
+                .categories(categories == null ? List.of() : categoryResolver.resolve(categories))
+                .techStacks(techStacks == null ? List.of() : techStackResolver.resolve(techStacks))
+                .projectSortType(projectSortType)
+                .limit(limit)
+                .cursor(projectSortType.toCursor(cursor))
+                .build();
+
         return ResponseEntity.ok(projectService.getPagedProjects(projectQueryCondition));
     }
 
@@ -109,10 +95,8 @@ public class ProjectController {
             @RequestParam(value = "sector", required = false) String sector,
             @RequestParam(value = "search", required = false) String search
     ) {
-        ProjectArticleResponse projectArticleResponse = articleService.getByProjectId(
-                id,
-                ProjectArticleQueryCondition.from(sector, search)
-        );
+        ProjectArticleQueryCondition condition = new ProjectArticleQueryCondition(sector, search);
+        ProjectArticleResponse projectArticleResponse = articleService.getByProjectId(id, condition);
         return ResponseEntity.ok(projectArticleResponse);
     }
 }
