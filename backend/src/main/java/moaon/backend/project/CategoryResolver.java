@@ -16,6 +16,9 @@ public class CategoryResolver {
     private final CategoryRepository categoryRepository;
 
     public List<Category> resolve(List<String> rawNames) {
+        if (rawNames.size() == 1 && rawNames.getFirst().equals("all")) {
+            return List.of();
+        }
         return rawNames.stream()
                 .map(name -> categoryRepository.findByName(name)
                         .orElseThrow(() -> new CustomException(ErrorCode.CATEGORY_NOT_FOUND)))
