@@ -38,7 +38,7 @@ public class ArticleSearchRequest {
     }
 
     public boolean hasSector() {
-        return sector != null;
+        return sector != null && !"all".equalsIgnoreCase(sector);
     }
 
     public boolean hasTopics() {
