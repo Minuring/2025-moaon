@@ -1,7 +1,8 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useTabAnimation } from "@shared/hooks/useTabAnimation";
 import { useLocation, useNavigate } from "react-router";
-import useArticleList from "@/pages/article/hooks/useArticleList";
-import useProjectList from "@/pages/project-list/hooks/useProjectList";
+import { articlesQueries } from "@/apis/articles/articles.queries";
+import { projectQueries } from "@/apis/projects/project.queries";
 import * as S from "./NavBar.styled";
 
 const NAV_LIST = [
@@ -30,18 +31,17 @@ function NavBar() {
     duration: 0.3,
   });
   const navigate = useNavigate();
-  const { refetch: projectListRefetch } = useProjectList();
-  const { refetch: articleListRefetch } = useArticleList();
+  const queryClient = useQueryClient();
 
   const handleNavigation = (href: string) => {
     navigate(href);
 
     switch (href) {
       case "/article":
-        articleListRefetch();
+        queryClient.resetQueries({ queryKey: articlesQueries.all });
         break;
       case "/project":
-        projectListRefetch();
+        queryClient.resetQueries({ queryKey: projectQueries.all });
         break;
     }
   };
