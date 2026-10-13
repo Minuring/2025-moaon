@@ -2,6 +2,7 @@ package moaon.backend.article.repository;
 
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.Sector;
+import moaon.backend.article.domain.Topic;
 import moaon.backend.article.dto.ArticleDto;
 import moaon.backend.article.dto.ArticleQueryCondition;
 import moaon.backend.fixture.DataAccessLayerTest;
@@ -76,6 +77,57 @@ class ArticleRepositoryTest {
         assertThat(result.articles())
                 .extracting(ArticleDto::id)
                 .containsExactly(articleWithBoth.getId());
+    }
+
+    @Test
+    @DisplayName("topics만 있으면 모든 topic을 포함하는 아티클 수를 센다")
+    void search_countsByAllTopics() {
+        // given
+        Article articleWithBoth = repositoryHelper.saveArticle(b -> b.topics(Topic.ETC, Topic.NATIVE));
+        repositoryHelper.saveArticle(b -> b.topics(Topic.ETC));
+        repositoryHelper.saveArticle(b -> b.topics(Topic.NATIVE, Topic.SDK));
+
+        // when
+        ArticleQueryCondition condition = ArticleQueryCondition.builder()
+                .topics(List.of(Topic.ETC, Topic.NATIVE))
+                .build();
+        ArticleSearchResult result = articleRepository.search(condition);
+
+        // then
+        assertAll(
+                () -> assertThat(result.articles())
+                        .extracting(ArticleDto::id)
+                        .containsExactly(articleWithBoth.getId()),
+                () -> assertThat(result.totalCount()).isEqualTo(1)
+        );
+    }
+
+    @Test
+    @DisplayName("sector, topics, techStacks를 모두 만족하는 아티클 수를 센다")
+    void search_countsByAllFilters() {
+        // given
+        TechStack techStack = Fixtures.anyTechStack();
+
+        Article matched = repositoryHelper.saveArticle(b -> b.sector(Sector.BE).topics(Topic.ETC).techStacks(techStack));
+        repositoryHelper.saveArticle(b -> b.sector(Sector.FE).topics(Topic.ETC).techStacks(techStack));
+        repositoryHelper.saveArticle(b -> b.sector(Sector.BE).topics(Topic.TESTING).techStacks(techStack));
+        repositoryHelper.saveArticle(b -> b.sector(Sector.BE).topics(Topic.ETC));
+
+        // when
+        ArticleQueryCondition condition = ArticleQueryCondition.builder()
+                .sector(Sector.BE)
+                .topics(List.of(Topic.ETC))
+                .techStacks(List.of(techStack))
+                .build();
+        ArticleSearchResult result = articleRepository.search(condition);
+
+        // then
+        assertAll(
+                () -> assertThat(result.articles())
+                        .extracting(ArticleDto::id)
+                        .containsExactly(matched.getId()),
+                () -> assertThat(result.totalCount()).isEqualTo(1)
+        );
     }
 
     @Test
