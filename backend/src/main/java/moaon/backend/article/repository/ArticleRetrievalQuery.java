@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 
 import static moaon.backend.article.domain.QArticle.article;
 import static moaon.backend.article.domain.QArticleContent.articleContent;
-import static moaon.backend.project.domain.QProject.project;
 
 @RequiredArgsConstructor
 class ArticleRetrievalQuery {
@@ -56,7 +55,6 @@ class ArticleRetrievalQuery {
     private List<Article> fetchWithoutScore(ArticleQueryCondition condition, Long projectId) {
         return jpaQueryFactory
                 .selectFrom(article)
-                .join(article.project, project).fetchJoin()
                 .where(
                         baseConditions(condition, projectId),
                         cursorClause(condition, null)
