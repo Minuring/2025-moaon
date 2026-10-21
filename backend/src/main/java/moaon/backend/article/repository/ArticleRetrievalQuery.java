@@ -9,6 +9,8 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.annotation.Nullable;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
 import moaon.backend.article.domain.Article;
 import moaon.backend.article.domain.ArticleCursor;
@@ -19,18 +21,16 @@ import moaon.backend.global.domain.SearchKeyword;
 import moaon.backend.techStack.domain.TechStack;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static moaon.backend.article.domain.QArticle.article;
 import static moaon.backend.article.domain.QArticleContent.articleContent;
-import static moaon.backend.project.domain.QProject.project;
 
-/**
- * ES 검색이 실패했을 때만 사용되는 DB 폴백 검색. FilteringIds로 필터별 쿼리를 쪼개는 튜닝은 하지 않고,
- * 동적 조건을 담은 단일 쿼리로 최대한 단순하게 구현한다.
- */
 @RequiredArgsConstructor
 class ArticleRetrievalQuery {
 
@@ -39,6 +39,7 @@ class ArticleRetrievalQuery {
     private static final String BLANK = " ";
 
     private final JPAQueryFactory jpaQueryFactory;
+    private final EntityManager em;
 
     public List<Article> search(ArticleQueryCondition condition) {
         return search(condition, null);
@@ -54,7 +55,6 @@ class ArticleRetrievalQuery {
     private List<Article> fetchWithoutScore(ArticleQueryCondition condition, Long projectId) {
         return jpaQueryFactory
                 .selectFrom(article)
-                .join(article.project, project).fetchJoin()
                 .where(
                         baseConditions(condition, projectId),
                         cursorClause(condition, null)
@@ -89,6 +89,10 @@ class ArticleRetrievalQuery {
     }
 
     public long count(ArticleQueryCondition condition, Long projectId) {
+        if (condition.search() == null && hasFilter(condition, projectId)) {
+            return countByIntersection(condition, projectId);
+        }
+
         JPAQuery<Long> query = jpaQueryFactory
                 .select(article.count())
                 .from(article);
@@ -101,6 +105,57 @@ class ArticleRetrievalQuery {
                 .where(baseConditions(condition, projectId))
                 .fetchOne();
         return count == null ? 0 : count;
+    }
+
+    private boolean hasFilter(ArticleQueryCondition condition, Long projectId) {
+        return projectId != null
+                || condition.hasSector()
+                || condition.hasTopics()
+                || condition.hasTechStacks();
+    }
+
+    /**
+     * 필터별 article_id 집합을 각 테이블의 커버링 인덱스로 구해 교집합을 센다.
+     * 연관 테이블은 article FK라 article 조인 없이 직접 조회해도 결과가 같고, article 클러스터드 인덱스 접근을 피할 수 있다.
+     */
+    private long countByIntersection(ArticleQueryCondition condition, Long projectId) {
+        List<String> idSetQueries = new ArrayList<>();
+        Map<String, Object> params = new HashMap<>();
+
+        if (projectId != null) {
+            idSetQueries.add("SELECT id FROM article WHERE project_id = :projectId");
+            params.put("projectId", projectId);
+        }
+        if (condition.hasSector()) {
+            idSetQueries.add("SELECT id FROM article WHERE sector = :sector");
+            params.put("sector", condition.sector().name());
+        }
+        if (condition.hasTopics()) {
+            List<String> topicNames = condition.topics().stream()
+                    .map(Topic::name)
+                    .distinct()
+                    .toList();
+            for (int i = 0; i < topicNames.size(); i++) {
+                idSetQueries.add("SELECT article_id FROM article_topics WHERE topics = :topic" + i);
+                params.put("topic" + i, topicNames.get(i));
+            }
+        }
+        if (condition.hasTechStacks()) {
+            List<String> techStackNames = condition.techStacks().stream()
+                    .map(TechStack::getName)
+                    .distinct()
+                    .toList();
+            for (int i = 0; i < techStackNames.size(); i++) {
+                idSetQueries.add("SELECT ats.article_id FROM article_tech_stack ats"
+                        + " JOIN tech_stack ts ON ts.id = ats.tech_stack_id WHERE ts.name = :techStack" + i);
+                params.put("techStack" + i, techStackNames.get(i));
+            }
+        }
+
+        Query query = em.createNativeQuery(
+                "SELECT COUNT(*) FROM (" + String.join(" INTERSECT ", idSetQueries) + ") matched");
+        params.forEach(query::setParameter);
+        return ((Number) query.getSingleResult()).longValue();
     }
 
     private BooleanBuilder baseConditions(ArticleQueryCondition condition, Long projectId) {
