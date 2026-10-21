@@ -105,9 +105,6 @@ public class ArticleApiTest extends BaseApiTest {
         Topic unfilteredTopic = Topic.API_DESIGN;
         TechStack filteredTechStack = repositoryHelper.saveAnyTechStack();
         TechStack unfilteredTechStack = repositoryHelper.saveAnyTechStack();
-        String filteredSearch = "moa";
-        String unfilteredSearch = "momo";
-
         Project project = repositoryHelper.saveAnyProject();
 
         // sector 비대상
@@ -119,7 +116,7 @@ public class ArticleApiTest extends BaseApiTest {
                         .clicks(4)
                         .topics(filteredTopic)
                         .build(),
-                filteredSearch
+                "content"
         );
         // techstack 비대상
         repositoryHelper.save(
@@ -130,40 +127,7 @@ public class ArticleApiTest extends BaseApiTest {
                         .clicks(4)
                         .topics(filteredTopic)
                         .build(),
-                filteredSearch
-        );
-        // title 비대상
-        repositoryHelper.save(
-                Fixtures.articleBuilder()
-                        .title(unfilteredSearch)
-                        .sector(filteredSector)
-                        .techStacks(List.of(filteredTechStack))
-                        .project(project)
-                        .clicks(1)
-                        .topics(filteredTopic)
-                        .build()
-        );
-        // summary 비대상
-        repositoryHelper.save(
-                Fixtures.articleBuilder()
-                        .summary(unfilteredSearch)
-                        .sector(filteredSector)
-                        .techStacks(List.of(filteredTechStack))
-                        .project(project)
-                        .clicks(1)
-                        .topics(filteredTopic)
-                        .build()
-        );
-        // content 비대상
-        repositoryHelper.save(
-                Fixtures.articleBuilder()
-                        .sector(filteredSector)
-                        .techStacks(List.of(unfilteredTechStack))
-                        .project(project)
-                        .clicks(4)
-                        .topics(filteredTopic)
-                        .build(),
-                unfilteredSearch
+                "content"
         );
         // topic 비대상
         repositoryHelper.save(
@@ -174,7 +138,7 @@ public class ArticleApiTest extends BaseApiTest {
                         .project(project)
                         .clicks(4)
                         .build(),
-                filteredSearch
+                "content"
         );
         // filter 전부 만족, clicks 1 (요청의 limit가 2이므로 제외되어야 함)
         Article articleClickRankThird = repositoryHelper.save(
@@ -185,12 +149,11 @@ public class ArticleApiTest extends BaseApiTest {
                         .clicks(1)
                         .topics(filteredTopic)
                         .build(),
-                filteredSearch
+                "content"
         );
         // filter 전부 만족, clicks 2
         Article articleClickRankSecond = repositoryHelper.save(
                 Fixtures.articleBuilder()
-                        .title(filteredSearch)
                         .sector(filteredSector)
                         .techStacks(List.of(filteredTechStack))
                         .project(project)
@@ -207,7 +170,7 @@ public class ArticleApiTest extends BaseApiTest {
                         .clicks(3)
                         .topics(filteredTopic)
                         .build(),
-                filteredSearch
+                "content"
         );
 
         Mockito.when(elasticSearchService.search(Mockito.any()))
@@ -218,7 +181,6 @@ public class ArticleApiTest extends BaseApiTest {
         // when
         ArticleListResponse actualResponse = RestAssured.given().log().all()
                 .queryParams("sort", "clicks")
-                .queryParams("search", filteredSearch)
                 .queryParams("sector", filteredSector.getName())
                 .queryParams("topics", List.of(filteredTopic.getName()))
                 .queryParams("techStacks", List.of(filteredTechStack.getName()))

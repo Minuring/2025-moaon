@@ -8,8 +8,6 @@ import moaon.backend.global.exception.custom.ErrorCode;
 import moaon.backend.project.domain.Project;
 import moaon.backend.techStack.domain.ArticleTechStack;
 import moaon.backend.techStack.domain.TechStack;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -57,7 +55,6 @@ public class Article extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    @Fetch(FetchMode.JOIN)
     private List<ArticleTechStack> techStacks = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
