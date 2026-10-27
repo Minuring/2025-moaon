@@ -15,6 +15,10 @@ public enum ArticleSortType {
 
     private final String rawExpression;
 
+    public String getRawExpression() {
+        return rawExpression;
+    }
+
     private boolean matchesRawExpression(String rawExpression) {
         return this.rawExpression.equalsIgnoreCase(rawExpression);
     }

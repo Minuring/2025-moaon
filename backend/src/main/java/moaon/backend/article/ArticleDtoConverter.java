@@ -21,13 +21,13 @@ public class ArticleDtoConverter {
 
     public ArticleQueryCondition convert(ArticleSearchRequest r) {
         return new ArticleQueryCondition(
-                !r.hasSearch() ? null : new SearchKeyword(r.getSearch()),
-                !r.hasSector() ? null : Sector.of(r.getSector()),
-                !r.hasTopics() ? null : r.getTopics().stream().map(Topic::of).toList(),
-                !r.hasTechStacks() ? null : techStackResolver.resolve(r.getTechStacks()),
-                !r.hasSort() ? null : ArticleSortType.from(r.getSort()),
+                r.hasSearch() ? new SearchKeyword(r.getSearch()) : null,
+                r.hasSector() ? Sector.of(r.getSector()) : null,
+                r.hasTopics() ? r.getTopics().stream().map(Topic::of).toList() : null,
+                r.hasTechStacks() ? techStackResolver.resolve(r.getTechStacks()) : null,
+                r.hasSort() ? ArticleSortType.from(r.getSort()) : ArticleSortType.CREATED_AT,
                 r.getLimit(),
-                !r.hasCursor() ? null : new ArticleCursor(r.getCursor())
+                r.hasCursor() ? new ArticleCursor(r.getCursor()) : null
         );
     }
 

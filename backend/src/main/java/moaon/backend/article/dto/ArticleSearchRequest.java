@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.Setter;
+import moaon.backend.article.domain.ArticleSortType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
 @Setter
 @Getter
 public class ArticleSearchRequest {
-    private String sort;
+    private String sort = ArticleSortType.CREATED_AT.getRawExpression();
     private List<String> techStacks = new ArrayList<>();
     private String sector;
     private List<String> topics = new ArrayList<>();
