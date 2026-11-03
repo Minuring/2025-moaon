@@ -25,7 +25,7 @@ public class ArticleRepository {
 
     @PostConstruct
     public void init() {
-        articleRetrievalQuery = new ArticleRetrievalQuery(jpaQueryFactory, em);
+        articleRetrievalQuery = new ArticleRetrievalQuery(jpaQueryFactory);
     }
 
     @Transactional(readOnly = true)
