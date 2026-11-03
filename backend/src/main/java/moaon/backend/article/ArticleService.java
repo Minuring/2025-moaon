@@ -44,8 +44,9 @@ public class ArticleService {
 
     @CircuitBreaker(name = "articleSearchCB", fallbackMethod = "getPagedArticlesFromDB")
     public ArticleListResponse getPagedArticles(ArticleQueryCondition queryCondition) {
-        ArticleSearchResult result = elasticSearchService.search(queryCondition);
-        return ArticleListResponse.from(result);
+//        ArticleSearchResult result = elasticSearchService.search(queryCondition);
+//        return ArticleListResponse.from(result);
+        return getPagedArticlesFromDB(queryCondition, null);
     }
 
     // CircuitBreaker의 fallbackMethod는 프록시가 아닌 원본 객체에 리플렉션으로 직접 호출되어
