@@ -1,6 +1,8 @@
 services:
   app:
-    image: ${DOCKERHUB_USERNAME}/moaon-backend:latest
+    build:
+      context: ./backend
+      dockerfile: ./backend/docker/new.Dockerfile
     container_name: app
     ports:
       - "80:8080"
