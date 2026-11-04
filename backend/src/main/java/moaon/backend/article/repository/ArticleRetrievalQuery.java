@@ -203,11 +203,11 @@ class ArticleRetrievalQuery {
     private OrderSpecifier<?>[] toOrderBy(ArticleSortType sortType, @Nullable SearchKeyword search) {
         if (sortType == ArticleSortType.RELEVANCE && search != null) {
             NumberExpression<Double> score = matchScore(search);
-            return new OrderSpecifier<?>[]{score.desc(), article.id.asc()};
+            return new OrderSpecifier<?>[]{score.desc(), article.id.desc()};
         }
         if (sortType == ArticleSortType.CLICKS) {
-            return new OrderSpecifier<?>[]{article.clicks.desc(), article.id.asc()};
+            return new OrderSpecifier<?>[]{article.clicks.desc(), article.id.desc()};
         }
-        return new OrderSpecifier<?>[]{article.createdAt.desc(), article.id.asc()};
+        return new OrderSpecifier<?>[]{article.createdAt.desc(), article.id.desc()};
     }
 }
