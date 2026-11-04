@@ -273,9 +273,9 @@ class ElasticQueryBuilder {
 
     private Sort createSort(ArticleSortType sortType) {
         return switch (sortType) {
-            case RELEVANCE -> Sort.by(Order.desc("_score"), Order.asc("id"));
-            case CLICKS -> Sort.by(Order.desc("clicks"), Order.asc("id"));
-            case CREATED_AT -> Sort.by(Order.desc("createdAt"), Order.asc("id"));
+            case RELEVANCE -> Sort.by(Order.desc("_score"), Order.desc("id"));
+            case CLICKS -> Sort.by(Order.desc("clicks"), Order.desc("id"));
+            case CREATED_AT -> Sort.by(Order.desc("createdAt"), Order.desc("id"));
         };
     }
 }

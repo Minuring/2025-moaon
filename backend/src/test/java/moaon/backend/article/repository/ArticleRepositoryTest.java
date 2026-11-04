@@ -1,6 +1,7 @@
 package moaon.backend.article.repository;
 
 import moaon.backend.article.domain.Article;
+import moaon.backend.article.domain.ArticleSortType;
 import moaon.backend.article.domain.Sector;
 import moaon.backend.article.dto.ArticleDto;
 import moaon.backend.article.dto.ArticleQueryCondition;
@@ -116,6 +117,36 @@ class ArticleRepositoryTest {
                 () -> assertThat(result.articles()).hasSize(2),
                 () -> assertThat(result.hasNext()).isTrue(),
                 () -> assertThat(result.nextCursor()).isNotNull()
+        );
+    }
+
+    @Test
+    @DisplayName("정렬값이 같으면 id 내림차순으로 이어서 페이지를 조회한다")
+    void search_paginatesTiedSortValueByIdDesc() {
+        // given
+        Article first = repositoryHelper.save(Fixtures.articleBuilder().clicks(0).build());
+        Article second = repositoryHelper.save(Fixtures.articleBuilder().clicks(0).build());
+        Article third = repositoryHelper.save(Fixtures.articleBuilder().clicks(0).build());
+
+        // when
+        ArticleSearchResult firstPage = articleRepository.search(ArticleQueryCondition.builder()
+                .sortType(ArticleSortType.CLICKS)
+                .limit(2)
+                .build());
+        ArticleSearchResult secondPage = articleRepository.search(ArticleQueryCondition.builder()
+                .sortType(ArticleSortType.CLICKS)
+                .limit(2)
+                .cursor(firstPage.nextCursor())
+                .build());
+
+        // then
+        assertAll(
+                () -> assertThat(firstPage.articles())
+                        .extracting(ArticleDto::id)
+                        .containsExactly(third.getId(), second.getId()),
+                () -> assertThat(secondPage.articles())
+                        .extracting(ArticleDto::id)
+                        .containsExactly(first.getId())
         );
     }
 }

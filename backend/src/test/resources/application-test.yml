@@ -16,6 +16,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        default_batch_fetch_size: 21
     hibernate:
       ddl-auto: create-drop
     defer-datasource-initialization: true
