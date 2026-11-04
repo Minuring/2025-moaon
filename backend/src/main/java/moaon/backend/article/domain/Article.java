@@ -38,6 +38,10 @@ public class Article extends BaseTimeEntity {
     @Column(nullable = false)
     private String summary;
 
+    // [measure] S0 기준선: 본문 분리 전처럼 article.content를 매핑해 조회 시 본문까지 SELECT되게 한다.
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
     // Article <> Content 연관관계의 PK-FK 공유 구조에서
     // Content가 연관관계의 주인이 되는 게 자연스러운데, 이때
     // EAGER FETCH를 피할 수 없으므로 JPA 연관관계를 설정하지 않음.
