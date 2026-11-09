@@ -6,7 +6,6 @@ import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
-import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
@@ -29,7 +28,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static moaon.backend.article.domain.QArticle.article;
-import static moaon.backend.article.domain.QArticleContent.articleContent;
 
 @RequiredArgsConstructor
 class ArticleRetrievalQuery {
@@ -70,7 +68,6 @@ class ArticleRetrievalQuery {
         List<Tuple> tuples = jpaQueryFactory
                 .select(article, score)
                 .from(article)
-                .join(articleContent).on(articleContent.id.eq(article.id))
                 .where(
                         baseConditions(condition, projectId),
                         cursorClause(condition, search)
@@ -93,15 +90,9 @@ class ArticleRetrievalQuery {
             return countByIntersection(condition, projectId);
         }
 
-        JPAQuery<Long> query = jpaQueryFactory
+        Long count = jpaQueryFactory
                 .select(article.count())
-                .from(article);
-
-        if (condition.search() != null) {
-            query.join(articleContent).on(articleContent.id.eq(article.id));
-        }
-
-        Long count = query
+                .from(article)
                 .where(baseConditions(condition, projectId))
                 .fetchOne();
         return count == null ? 0 : count;
