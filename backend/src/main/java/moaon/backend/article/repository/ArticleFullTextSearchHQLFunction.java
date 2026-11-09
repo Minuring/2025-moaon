@@ -12,7 +12,7 @@ public class ArticleFullTextSearchHQLFunction implements FunctionContributor {
     private static final String FUNCTION_NAME = "article_match_against";
 
     private static final String SQL_PATTERN =
-            "(match (title, summary) against (?1 in boolean mode) + match (content) against (?1 in boolean mode))";
+            "match (title, summary) against (?1 in boolean mode)";
 
     /**
      * {0} - query format to search<br>
