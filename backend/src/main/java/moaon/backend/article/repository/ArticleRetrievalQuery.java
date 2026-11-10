@@ -1,11 +1,8 @@
 package moaon.backend.article.repository;
 
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityManager;
@@ -25,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static moaon.backend.article.domain.QArticle.article;
@@ -32,9 +30,27 @@ import static moaon.backend.article.domain.QArticle.article;
 @RequiredArgsConstructor
 class ArticleRetrievalQuery {
 
-    private static final double MINIMUM_MATCH_SCORE = 0.0;
     private static final int FETCH_EXTRA_FOR_HAS_NEXT = 1;
     private static final String BLANK = " ";
+
+    /**
+     * title·summary와 content를 각자의 FULLTEXT 인덱스로 검색한 뒤 article id별로 점수를 합산한다.
+     * 두 점수를 한 식으로 더해 비교하면 어느 인덱스도 타지 못해 전체 스캔이 되므로 따로 구해 합친다.
+     * FULLTEXT 점수는 0 이상이라 합산 결과는 "MATCH(title, summary) + MATCH(content) > 0"과 같은 집합·점수를 갖는다.
+     */
+    private static final String MATCHED_SCORES = """
+            SELECT id, SUM(score) AS score
+            FROM (
+                SELECT id, MATCH(title, summary) AGAINST(:keyword IN BOOLEAN MODE) AS score
+                FROM article
+                WHERE MATCH(title, summary) AGAINST(:keyword IN BOOLEAN MODE) > 0
+                UNION ALL
+                SELECT id, MATCH(content) AGAINST(:keyword IN BOOLEAN MODE) AS score
+                FROM article_content
+                WHERE MATCH(content) AGAINST(:keyword IN BOOLEAN MODE) > 0
+            ) matched_by_column
+            GROUP BY id
+            """;
 
     private final JPAQueryFactory jpaQueryFactory;
     private final EntityManager em;
@@ -55,38 +71,57 @@ class ArticleRetrievalQuery {
                 .selectFrom(article)
                 .where(
                         baseConditions(condition, projectId),
-                        cursorClause(condition, null)
+                        cursorClause(condition)
                 )
-                .orderBy(toOrderBy(condition.sortType(), null))
+                .orderBy(toOrderBy(condition.sortType()))
                 .limit(condition.limit() + FETCH_EXTRA_FOR_HAS_NEXT)
                 .fetch();
     }
 
     private List<Article> fetchWithScore(ArticleQueryCondition condition, Long projectId, SearchKeyword search) {
-        NumberExpression<Double> score = matchScore(search);
+        Map<String, Object> params = new HashMap<>();
+        params.put("keyword", formatSearchKeyword(search));
+        List<String> where = searchFilters(condition, projectId, params);
+        ArticleSortType sortType = condition.sortType();
+        boolean needsArticle = !where.isEmpty() || sortType != ArticleSortType.RELEVANCE;
+        String idColumn = needsArticle ? "a.id" : "m.id";
 
-        List<Tuple> tuples = jpaQueryFactory
-                .select(article, score)
-                .from(article)
-                .where(
-                        baseConditions(condition, projectId),
-                        cursorClause(condition, search)
-                )
-                .orderBy(toOrderBy(condition.sortType(), search))
-                .limit(condition.limit() + FETCH_EXTRA_FOR_HAS_NEXT)
-                .fetch();
+        if (condition.hasCursor()) {
+            where.add(searchCursorClause(condition.cursor(), sortType, idColumn, params));
+        }
 
-        return tuples.stream()
-                .map(tuple -> {
-                    Article found = tuple.get(article);
-                    found.setScore(tuple.get(score));
+        String sql = "SELECT " + idColumn + ", m.score FROM (" + MATCHED_SCORES + ") m"
+                + (needsArticle ? " JOIN article a ON a.id = m.id" : "")
+                + (where.isEmpty() ? "" : " WHERE " + String.join(" AND ", where))
+                + " ORDER BY " + searchSortColumn(sortType) + " DESC, " + idColumn + " DESC";
+        Query query = em.createNativeQuery(sql);
+        params.forEach(query::setParameter);
+        query.setMaxResults(condition.limit() + FETCH_EXTRA_FOR_HAS_NEXT);
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = query.getResultList();
+        List<Long> ids = rows.stream().map(row -> ((Number) row[0]).longValue()).toList();
+        Map<Long, Article> articlesById = jpaQueryFactory
+                .selectFrom(article)
+                .where(article.id.in(ids))
+                .fetch()
+                .stream()
+                .collect(Collectors.toMap(Article::getId, Function.identity()));
+
+        return rows.stream()
+                .map(row -> {
+                    Article found = articlesById.get(((Number) row[0]).longValue());
+                    found.setScore(((Number) row[1]).doubleValue());
                     return found;
                 })
                 .toList();
     }
 
     public long count(ArticleQueryCondition condition, Long projectId) {
-        if (condition.search() == null && hasFilter(condition, projectId)) {
+        if (condition.search() != null) {
+            return countBySearch(condition, projectId);
+        }
+        if (hasFilter(condition, projectId)) {
             return countByIntersection(condition, projectId);
         }
 
@@ -96,6 +131,76 @@ class ArticleRetrievalQuery {
                 .where(baseConditions(condition, projectId))
                 .fetchOne();
         return count == null ? 0 : count;
+    }
+
+    private long countBySearch(ArticleQueryCondition condition, Long projectId) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("keyword", formatSearchKeyword(condition.search()));
+        List<String> where = searchFilters(condition, projectId, params);
+
+        String sql = "SELECT COUNT(*) FROM (" + MATCHED_SCORES + ") m"
+                + (where.isEmpty() ? "" : " JOIN article a ON a.id = m.id WHERE " + String.join(" AND ", where));
+        Query query = em.createNativeQuery(sql);
+        params.forEach(query::setParameter);
+        return ((Number) query.getSingleResult()).longValue();
+    }
+
+    private List<String> searchFilters(ArticleQueryCondition condition, Long projectId, Map<String, Object> params) {
+        List<String> where = new ArrayList<>();
+
+        if (projectId != null) {
+            where.add("a.project_id = :projectId");
+            params.put("projectId", projectId);
+        }
+        if (condition.hasSector()) {
+            where.add("a.sector = :sector");
+            params.put("sector", condition.sector().name());
+        }
+        if (condition.hasTopics()) {
+            List<String> topicNames = condition.topics().stream()
+                    .map(Topic::name)
+                    .distinct()
+                    .toList();
+            for (int i = 0; i < topicNames.size(); i++) {
+                where.add("EXISTS (SELECT 1 FROM article_topics t WHERE t.article_id = a.id AND t.topics = :topic" + i + ")");
+                params.put("topic" + i, topicNames.get(i));
+            }
+        }
+        if (condition.hasTechStacks()) {
+            List<String> techStackNames = condition.techStacks().stream()
+                    .map(TechStack::getName)
+                    .distinct()
+                    .toList();
+            for (int i = 0; i < techStackNames.size(); i++) {
+                where.add("EXISTS (SELECT 1 FROM article_tech_stack ats JOIN tech_stack ts ON ts.id = ats.tech_stack_id"
+                        + " WHERE ats.article_id = a.id AND ts.name = :techStack" + i + ")");
+                params.put("techStack" + i, techStackNames.get(i));
+            }
+        }
+        return where;
+    }
+
+    private String searchSortColumn(ArticleSortType sortType) {
+        if (sortType == ArticleSortType.RELEVANCE) {
+            return "m.score";
+        }
+        if (sortType == ArticleSortType.CLICKS) {
+            return "a.clicks";
+        }
+        return "a.created_at";
+    }
+
+    private String searchCursorClause(ArticleCursor cursor, ArticleSortType sortType, String idColumn, Map<String, Object> params) {
+        String sortColumn = searchSortColumn(sortType);
+        if (sortType == ArticleSortType.RELEVANCE) {
+            params.put("cursorValue", cursor.getSortValueAsDouble());
+        } else if (sortType == ArticleSortType.CLICKS) {
+            params.put("cursorValue", cursor.getSortValueAsInt());
+        } else {
+            params.put("cursorValue", cursor.getSortValueAsLocalDateTime());
+        }
+        params.put("cursorId", cursor.getLastId());
+        return "(" + sortColumn + " < :cursorValue OR (" + sortColumn + " = :cursorValue AND " + idColumn + " < :cursorId))";
     }
 
     private boolean hasFilter(ArticleQueryCondition condition, Long projectId) {
@@ -155,9 +260,6 @@ class ArticleRetrievalQuery {
         where.and(sectorEq(condition));
         where.and(containsAllTopics(condition));
         where.and(hasAllTechStacks(condition));
-        if (condition.search() != null) {
-            where.and(matchScore(condition.search()).gt(MINIMUM_MATCH_SCORE));
-        }
         return where;
     }
 
@@ -199,14 +301,6 @@ class ArticleRetrievalQuery {
         return where;
     }
 
-    private NumberExpression<Double> matchScore(SearchKeyword search) {
-        return Expressions.numberTemplate(
-                Double.class,
-                ArticleFullTextSearchHQLFunction.EXPRESSION_TEMPLATE,
-                formatSearchKeyword(search)
-        );
-    }
-
     private String formatSearchKeyword(SearchKeyword searchKeyword) {
         String replaced = searchKeyword.replaceSpecialCharacters(BLANK);
         return Arrays.stream(replaced.split(BLANK))
@@ -221,24 +315,16 @@ class ArticleRetrievalQuery {
         return "+" + keyword.toLowerCase() + "*";
     }
 
-    private BooleanExpression cursorClause(ArticleQueryCondition condition, @Nullable SearchKeyword search) {
+    private BooleanExpression cursorClause(ArticleQueryCondition condition) {
         if (!condition.hasCursor()) {
             return null;
         }
         ArticleCursor cursor = condition.cursor();
-        ArticleSortType sortType = condition.sortType();
 
-        if (sortType == ArticleSortType.CLICKS) {
+        if (condition.sortType() == ArticleSortType.CLICKS) {
             int sortValue = cursor.getSortValueAsInt();
             return article.clicks.lt(sortValue)
                     .or(article.clicks.eq(sortValue).and(article.id.lt(cursor.getLastId())));
-        }
-
-        if (sortType == ArticleSortType.RELEVANCE && search != null) {
-            double sortValue = cursor.getSortValueAsDouble();
-            NumberExpression<Double> score = matchScore(search);
-            return score.lt(sortValue)
-                    .or(score.eq(sortValue).and(article.id.lt(cursor.getLastId())));
         }
 
         LocalDateTime sortValue = cursor.getSortValueAsLocalDateTime();
@@ -246,11 +332,7 @@ class ArticleRetrievalQuery {
                 .or(article.createdAt.eq(sortValue).and(article.id.lt(cursor.getLastId())));
     }
 
-    private OrderSpecifier<?>[] toOrderBy(ArticleSortType sortType, @Nullable SearchKeyword search) {
-        if (sortType == ArticleSortType.RELEVANCE && search != null) {
-            NumberExpression<Double> score = matchScore(search);
-            return new OrderSpecifier<?>[]{score.desc(), article.id.desc()};
-        }
+    private OrderSpecifier<?>[] toOrderBy(ArticleSortType sortType) {
         if (sortType == ArticleSortType.CLICKS) {
             return new OrderSpecifier<?>[]{article.clicks.desc(), article.id.desc()};
         }
