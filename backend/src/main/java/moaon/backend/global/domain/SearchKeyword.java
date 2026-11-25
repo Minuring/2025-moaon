@@ -28,9 +28,9 @@ public record SearchKeyword(
         return allTokens().getLast();
     }
 
-    public List<String> allTokensBeforeLastToken() {
-        int size = allTokens().size();
-        return allTokens().subList(0, size - 1);
+    public String textBeforeLastToken() {
+        String text = value.substring(0, value.lastIndexOf(lastToken()));
+        return text.strip();
     }
 
     private List<String> allTokens() {

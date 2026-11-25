@@ -53,14 +53,31 @@ class SearchKeywordTest {
         assertThat(searchKeyword.lastToken()).isEqualTo("마");
     }
 
-    @DisplayName("마지막 토큰 이전까지의 모든 토큰을 리스트로 얻는다.")
-    @Test
-    void allTokensBeforeLastToken() {
-        SearchKeyword searchKeyword = new SearchKeyword("배달 서비스 아키텍처 구축");
-        assertThat(searchKeyword.allTokensBeforeLastToken()).containsExactly("배달", "서비스", "아키텍처");
+    @DisplayName("마지막 토큰 이전까지의 원본 문자열을 앞뒤 공백만 지우고 얻는다.")
+    @ParameterizedTest
+    @CsvSource(delimiterString = " -> ", value = {
+            "' 배달 서비스 ' -> 배달",
+            "'배달 서비스 ' -> 배달",
+            "' 배달  서비스 아키텍처 구축 ' -> '배달  서비스 아키텍처'"
+    })
+    void textBeforeLastToken(String keyword, String expected) {
+        SearchKeyword searchKeyword = new SearchKeyword(keyword);
+        assertThat(searchKeyword.textBeforeLastToken()).isEqualTo(expected);
+    }
 
-        SearchKeyword onlyOneToken = new SearchKeyword("오직한개의토큰");
-        assertThat(onlyOneToken.allTokensBeforeLastToken()).isEmpty();
+    @DisplayName("마지막 토큰이 앞에도 있으면 마지막 위치를 기준으로 자른다.")
+    @Test
+    void textBeforeLastTokenWithRepeatedToken() {
+        SearchKeyword searchKeyword = new SearchKeyword("자바 테스트 자바");
+        assertThat(searchKeyword.textBeforeLastToken()).isEqualTo("자바 테스트");
+    }
+
+    @DisplayName("토큰이 하나뿐이면 빈 문자열을 얻는다.")
+    @ParameterizedTest
+    @ValueSource(strings = {"오직한개의토큰", "  오직한개의토큰  ", "배달 "})
+    void textBeforeLastTokenBlank(String value) {
+        SearchKeyword searchKeyword = new SearchKeyword(value);
+        assertThat(searchKeyword.textBeforeLastToken()).isEmpty();
     }
 
     @DisplayName("검색어에 특수문자가 포함된 경우 특수문자를 주어진 문자로 치환한다.")

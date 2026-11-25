@@ -157,9 +157,9 @@ class ElasticQueryBuilder {
     private Query createTextMatchQuery(SearchKeyword searchKeyword) {
         List<Query> mustQueries = new ArrayList<>();
 
-        // 1) 마지막 이전 토큰들은 모두 exact 필수
-        for (String token : searchKeyword.allTokensBeforeLastToken()) {
-            mustQueries.add(exactTokenQuery(token));
+        // 1) 마지막 이전 토큰들은 한 문장으로 분석해 매칭하고(filter), 점수는 토큰별 exact로 매긴다(should)
+        if (!searchKeyword.hasOnlyOneToken()) {
+            mustQueries.add(tokensBeforeLastQuery(searchKeyword.textBeforeLastToken()));
         }
 
         // 2) 마지막 토큰은 exact OR prefix 중 하나는 반드시 매칭
@@ -172,11 +172,20 @@ class ElasticQueryBuilder {
                 ._toQuery();
     }
 
+    private Query tokensBeforeLastQuery(String text) {
+        List<String> tokens = List.of(text.trim().split("\\s+"));
+        return QueryBuilders.bool()
+                .filter(multiMatchQuery(text, TextQueryType.CrossFields))
+                .should(tokens.stream().map(t -> multiMatchQuery(t, TextQueryType.MostFields)).toList())
+                .build()
+                ._toQuery();
+    }
+
     private Query lastTokenRequiredQuery(String token) {
         return QueryBuilders.bool()
                 .should(
                         // exact가 기본 축
-                        exactTokenQuery(token),
+                        multiMatchQuery(token, TextQueryType.MostFields),
 
                         // prefix는 약한 보조 신호
                         prefixTokenQuery(token)
@@ -186,15 +195,14 @@ class ElasticQueryBuilder {
                 ._toQuery();
     }
 
-    private Query exactTokenQuery(String token) {
-        return Query.of(q -> {
-            String title = "title^1.5";
-            String summary = "summary^1.25";
-            String content = "content^0.3";
-            return q.multiMatch(
-                    MultiMatchQuery.of(m -> m.query(token).fields(title, summary, content).operator(Operator.And).type(TextQueryType.MostFields).tieBreaker(0.3))
-            );
-        });
+    private Query multiMatchQuery(String text, TextQueryType textQueryType) {
+        return Query.of(q -> q.multiMatch(
+                MultiMatchQuery.of(m -> m.query(text)
+                        .fields("title", "summary", "content")
+                        .operator(Operator.And)
+                        .type(textQueryType)
+                ))
+        );
     }
 
     private Query prefixTokenQuery(String token) {

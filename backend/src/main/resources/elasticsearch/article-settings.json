@@ -55,7 +55,7 @@
         "decompound_mode": "discard",
         "discard_punctuation": "false",
         "type": "nori_tokenizer",
-        "user_dictionary": "dictionary.txt"
+        "user_dictionary": "analysis/dictionary.txt"
       },
       "edge_ngram_tokenizer": {
         "type": "edge_ngram",
