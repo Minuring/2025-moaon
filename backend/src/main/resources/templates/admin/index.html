@@ -20,6 +20,9 @@
         <li class="nav-item">
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-nori" type="button">Nori 사전</button>
         </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-analyze" type="button">분석 미리보기</button>
+        </li>
     </ul>
 
     <div class="tab-content">
@@ -30,6 +33,7 @@
                 <h5 class="mb-0">Synonym 사전</h5>
                 <div class="d-flex gap-2">
                     <button class="btn btn-primary btn-sm" onclick="synOpenAddModal()">추가</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="bulkOpenModal('synonym')">일괄 추가</button>
                     <button class="btn btn-outline-warning btn-sm" onclick="synReload()">Reload 실행</button>
                 </div>
             </div>
@@ -54,9 +58,18 @@
                 <h5 class="mb-0">Nori 사용자 사전</h5>
                 <div class="d-flex gap-2">
                     <button class="btn btn-primary btn-sm" onclick="noriOpenAddModal()">추가</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="bulkOpenModal('nori')">일괄 추가</button>
                     <button class="btn btn-outline-secondary btn-sm" onclick="noriExport()">dictionary.txt 추출</button>
-                    <button class="btn btn-outline-warning btn-sm" onclick="noriReload()">인덱스 재시작 (Close/Open)</button>
                 </div>
+            </div>
+            <div class="alert alert-info small">
+                사용자 사전 변경은 아래 순서를 모두 거쳐야 검색에 반영됩니다.
+                <ol class="mb-1 mt-1">
+                    <li>항목 추가·수정·삭제</li>
+                    <li><strong>dictionary.txt 추출</strong> 후 ES 서버의 <code>volumes/es-dict/dictionary.txt</code>에 덮어쓰기</li>
+                    <li>전체 재색인</li>
+                </ol>
+                색인된 문서는 색인할 때의 사전으로 분석되어 있으므로, 인덱스 재시작만으로는 반영되지 않습니다. 재색인 전까지 기존 인덱스는 예전 사전으로 동작합니다.
             </div>
             <div id="nori-alert" class="mb-3"></div>
             <table class="table table-bordered table-sm">
@@ -72,6 +85,22 @@
                 </thead>
                 <tbody id="nori-table-body"></tbody>
             </table>
+        </div>
+
+        <!-- ── 분석 미리보기 탭 ── -->
+        <div class="tab-pane fade" id="tab-analyze" role="tabpanel">
+            <h5 class="mb-3">분석 미리보기</h5>
+            <div class="input-group mb-2">
+                <input type="text" class="form-control" id="analyze-input" placeholder="도커 스웜을 이용한 스케일 아웃"
+                       onkeydown="if (event.key === 'Enter') analyzeRun()">
+                <button class="btn btn-primary" onclick="analyzeRun()">분석</button>
+            </div>
+            <div class="form-text mb-3">
+                현재 인덱스의 분석기로 분석합니다. 사용자 사전은 인덱스를 만들 때 읽으므로 dictionary.txt를 바꿨다면 전체 재색인 후에,
+                동의어는 Reload 실행 후에 결과에 반영됩니다.
+            </div>
+            <div id="analyze-alert" class="mb-3"></div>
+            <div id="analyze-result"></div>
         </div>
 
     </div>
@@ -124,6 +153,27 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
                 <button type="button" class="btn btn-primary" onclick="noriSave()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 일괄 추가 모달 -->
+<div class="modal fade" id="bulkModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulk-modal-title">일괄 추가</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="bulk-conflict-alert" class="alert alert-warning d-none mb-3"></div>
+                <textarea class="form-control font-monospace" id="bulk-text-input" rows="14"></textarea>
+                <div class="form-text" id="bulk-format-help"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="bulkSave()">추가</button>
             </div>
         </div>
     </div>
@@ -259,17 +309,6 @@ function noriExport() {
         })
         .catch(() => showAlert('nori-alert', 'dictionary.txt 추출 실패', 'danger'));
 }
-function noriReload() {
-    const btn = event.currentTarget;
-    btn.disabled = true;
-    btn.textContent = '재시작 중…';
-    showAlert('nori-alert', 'ES 인덱스 재시작 요청 중입니다…', 'info');
-    fetch('/admin/api/dictionaries/nori/reload', {method: 'POST'})
-        .then(r => r.json())
-        .then(data => showAlert('nori-alert', data.message, data.success ? 'success' : 'danger'))
-        .catch(() => showAlert('nori-alert', '재시작 요청 실패', 'danger'))
-        .finally(() => { btn.disabled = false; btn.textContent = '인덱스 재시작 (Close/Open)'; });
-}
 function noriRender(entries) {
     const tbody = document.getElementById('nori-table-body');
     if (!entries.length) {
@@ -342,6 +381,118 @@ function noriDelete(id) {
         .then(r => { if (!r.ok) throw new Error(); })
         .then(() => { noriLoad(); showAlert('nori-alert', '삭제되었습니다.', 'success'); })
         .catch(() => showAlert('nori-alert', '삭제에 실패했습니다.', 'danger'));
+}
+
+// ── 일괄 추가 ──────────────────────────────────────
+const BULK = {
+    synonym: {
+        title: 'Synonym 일괄 추가',
+        url: '/admin/api/dictionaries/synonyms/bulk',
+        help: '한 줄에 동의어 묶음 하나, term은 쉼표로 구분합니다. 겹치는 줄이 하나라도 있으면 아무것도 추가하지 않습니다.',
+        placeholder: '아키텍처, 아키텍쳐, architecture\n도커, docker',
+        alertId: 'syn-alert',
+        load: () => synLoad(),
+        done: '검색에 반영하려면 Reload 실행을 누르세요.'
+    },
+    nori: {
+        title: 'Nori 일괄 추가',
+        url: '/admin/api/dictionaries/nori/bulk',
+        help: 'dictionary.txt와 같은 형식입니다. 한 줄에 "표면어" 또는 "표면어 분해1 분해2". 겹치는 줄이 하나라도 있으면 아무것도 추가하지 않습니다.',
+        placeholder: '아키텍쳐\n세종시 세종 시',
+        alertId: 'nori-alert',
+        load: () => noriLoad(),
+        done: 'dictionary.txt 반영과 전체 재색인을 해야 검색에 반영됩니다.'
+    }
+};
+let bulkKind = null;
+
+function bulkClearConflict() {
+    const el = document.getElementById('bulk-conflict-alert');
+    el.innerHTML = '';
+    el.classList.add('d-none');
+}
+function bulkOpenModal(kind) {
+    bulkKind = kind;
+    const cfg = BULK[kind];
+    document.getElementById('bulk-modal-title').textContent = cfg.title;
+    document.getElementById('bulk-format-help').textContent = cfg.help;
+    const input = document.getElementById('bulk-text-input');
+    input.value = '';
+    input.placeholder = cfg.placeholder;
+    bulkClearConflict();
+    new bootstrap.Modal(document.getElementById('bulkModal')).show();
+}
+function bulkSave() {
+    const cfg = BULK[bulkKind];
+    const text = document.getElementById('bulk-text-input').value;
+    if (!text.trim()) { showAlert(cfg.alertId, '추가할 항목을 입력해주세요.', 'warning'); return; }
+    fetch(cfg.url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text})})
+        .then(async r => {
+            if (r.status === 409) {
+                const conflicts = await r.json();
+                const el = document.getElementById('bulk-conflict-alert');
+                el.innerHTML = `⚠️ ${conflicts.length}개 줄이 겹쳐 아무것도 추가하지 않았습니다.<ul class="mb-0 mt-2">`
+                    + conflicts.map(c => `<li><code>${escapeHtml(c.line)}</code> — "<strong>${escapeHtml(c.duplicate)}</strong>"이(가) <code>${escapeHtml(c.conflictWith)}</code>와 겹침</li>`).join('')
+                    + '</ul>';
+                el.classList.remove('d-none');
+                return null;
+            }
+            if (!r.ok) throw new Error();
+            return r.json();
+        })
+        .then(data => {
+            if (!data) return;
+            bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
+            cfg.load();
+            showAlert(cfg.alertId, `${data.length}개 추가되었습니다. ${cfg.done}`, 'success');
+        })
+        .catch(() => showAlert(cfg.alertId, '일괄 추가에 실패했습니다.', 'danger'));
+}
+
+// ── 분석 미리보기 ──────────────────────────────────
+function analyzeRun() {
+    const text = document.getElementById('analyze-input').value;
+    if (!text.trim()) { showAlert('analyze-alert', '분석할 문장을 입력해주세요.', 'warning'); return; }
+    document.getElementById('analyze-alert').innerHTML = '';
+    fetch('/admin/api/analyze', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text})})
+        .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+        .then(analyzeRender)
+        .catch(() => showAlert('analyze-alert', '분석에 실패했습니다.', 'danger'));
+}
+function analyzeTokenBadges(tokens) {
+    if (!tokens.length) return '<span class="text-muted">토큰 없음</span>';
+    // 같은 위치의 토큰(동의어)은 한 칸에 묶는다.
+    const byPosition = new Map();
+    tokens.forEach(t => {
+        if (!byPosition.has(t.position)) byPosition.set(t.position, []);
+        byPosition.get(t.position).push(t);
+    });
+    return [...byPosition.values()].map(group =>
+        '<span class="d-inline-flex gap-1 border rounded p-1 me-2 mb-2">'
+        + group.map(t => t.type === 'SYNONYM'
+            ? `<span class="badge text-bg-warning" title="동의어 확장">${escapeHtml(t.token)}</span>`
+            : `<span class="badge text-bg-secondary">${escapeHtml(t.token)}</span>`).join('')
+        + '</span>').join('');
+}
+function analyzeRender(data) {
+    const join = tokens => tokens.map(t => t.token).join(' ');
+    const dictionaryAffected = join(data.indexTokens) !== join(data.noDictionaryTokens);
+    const synonyms = data.searchTokens.filter(t => t.type === 'SYNONYM').map(t => t.token);
+    const row = (title, desc, tokens) => `
+        <div class="mb-3">
+            <div class="fw-semibold">${title} <span class="text-muted small fw-normal">${desc}</span></div>
+            <div class="mt-1">${analyzeTokenBadges(tokens)}</div>
+        </div>`;
+    document.getElementById('analyze-result').innerHTML = `
+        <div class="small text-muted mb-2">인덱스: <code>${escapeHtml(data.index)}</code></div>
+        <ul class="mb-3">
+            <li>사용자 사전 영향: <strong>${dictionaryAffected ? '있음' : '없음'}</strong>
+                ${dictionaryAffected ? '(사전이 없을 때와 토큰이 다릅니다)' : ''}</li>
+            <li>동의어 확장: <strong>${synonyms.length ? escapeHtml(synonyms.join(', ')) : '없음'}</strong></li>
+        </ul>
+        ${row('색인 분석', '문서를 색인할 때', data.indexTokens)}
+        ${row('검색 분석', '검색어를 분석할 때, 노란색은 동의어 확장', data.searchTokens)}
+        ${row('사용자 사전 없이', '색인 분석에서 사용자 사전만 뺐을 때', data.noDictionaryTokens)}`;
 }
 
 // 첫 탭(Synonym) 초기 로드

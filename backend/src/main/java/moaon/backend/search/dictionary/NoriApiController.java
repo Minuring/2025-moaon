@@ -3,9 +3,11 @@ package moaon.backend.search.dictionary;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import moaon.backend.search.dictionary.dto.NoriRequest;
-import moaon.backend.search.dictionary.dto.ReloadResponse;
+import moaon.backend.search.dictionary.dto.BulkConflict;
+import moaon.backend.search.dictionary.dto.BulkRequest;
 import moaon.backend.search.dictionary.dto.NoriEntry;
+import moaon.backend.search.dictionary.dto.NoriRequest;
+import moaon.backend.search.dictionary.service.BulkConflictException;
 import moaon.backend.search.dictionary.service.DuplicateNoriEntryException;
 import moaon.backend.search.dictionary.service.NoriDictionaryService;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,12 @@ public class NoriApiController {
         return noriDictionaryService.add(request.getSurface(), request.getSegments());
     }
 
+    @PostMapping("/bulk")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<NoriEntry> createAll(@RequestBody @Valid BulkRequest request) {
+        return noriDictionaryService.addAll(request.getText());
+    }
+
     @PutMapping("/{id}")
     public NoriEntry update(@PathVariable Long id, @RequestBody @Valid NoriRequest request) {
         return noriDictionaryService.update(id, request.getSurface(), request.getSegments());
@@ -40,14 +48,15 @@ public class NoriApiController {
         noriDictionaryService.delete(id);
     }
 
-    @PostMapping("/reload")
-    public ReloadResponse reload() {
-        return noriDictionaryService.reloadIndex();
-    }
-
     @ExceptionHandler(DuplicateNoriEntryException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public NoriEntry handleDuplicate(DuplicateNoriEntryException e) {
         return e.getConflictEntry();
+    }
+
+    @ExceptionHandler(BulkConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public List<BulkConflict> handleBulkConflict(BulkConflictException e) {
+        return e.getConflicts();
     }
 }

@@ -44,7 +44,23 @@ public class SwitchAliasTasklet implements Tasklet {
             log.info("구 인덱스 삭제: {}", oldIndexNames);
         }
 
+        deleteOrphanIndices(newIndexName);
+
         return RepeatStatus.FINISHED;
+    }
+
+    // 실패한 재색인이 남긴, alias가 가리키지 않는 인덱스를 지운다.
+    private void deleteOrphanIndices(String newIndexName) {
+        var orphanIndexNames = batchClient.findIndexNamesByPattern(DOCUMENT_ANNOTATION.indexName() + "-*")
+                .stream()
+                .filter(name -> !name.equals(newIndexName))
+                .toList();
+        if (orphanIndexNames.isEmpty()) {
+            return;
+        }
+
+        batchClient.deleteIndex(IndexCoordinates.of(orphanIndexNames.toArray(String[]::new)));
+        log.info("alias 없는 인덱스 삭제: {}", orphanIndexNames);
     }
 
     private IndexCoordinates aliasWrapper() {

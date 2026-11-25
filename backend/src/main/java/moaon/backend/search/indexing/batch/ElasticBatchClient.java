@@ -130,6 +130,14 @@ class ElasticBatchClient {
         return iops.getAliasesForIndex(aliasWrapper.getIndexName()).keySet();
     }
 
+    public Set<String> findIndexNamesByPattern(String pattern) {
+        try {
+            return esClient.indices().get(g -> g.index(pattern)).result().keySet();
+        } catch (IOException e) {
+            throw new IllegalStateException("인덱스 조회 실패: " + pattern, e);
+        }
+    }
+
     public void deleteIndex(IndexCoordinates indexWrapper) {
         IndexOperations iops = ops.indexOps(indexWrapper);
         iops.delete();

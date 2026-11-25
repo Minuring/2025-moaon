@@ -8,6 +8,7 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.scope.context.StepContext;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 
 import java.util.Set;
 
@@ -44,6 +45,27 @@ class SwitchAliasTaskletTest {
 
         verify(batchClient).switchAlias(any(), any(), any());
         verify(batchClient, never()).removeAlias(any(), any());
+        verify(batchClient, never()).deleteIndex(any());
+    }
+
+    @Test
+    void alias가_가리키지_않는_인덱스는_새_인덱스를_빼고_삭제한다() {
+        when(batchClient.findIndexNamesByAlias(any())).thenReturn(Set.of());
+        when(batchClient.findIndexNamesByPattern("articles_idx-*"))
+                .thenReturn(Set.of("articles_idx-123", "articles_idx-orphan"));
+
+        tasklet.execute(mock(StepContribution.class), chunkContextWithNewIndex("articles_idx-123"));
+
+        verify(batchClient).deleteIndex(IndexCoordinates.of("articles_idx-orphan"));
+    }
+
+    @Test
+    void alias가_가리키지_않는_인덱스가_없으면_삭제하지_않는다() {
+        when(batchClient.findIndexNamesByAlias(any())).thenReturn(Set.of());
+        when(batchClient.findIndexNamesByPattern("articles_idx-*")).thenReturn(Set.of("articles_idx-123"));
+
+        tasklet.execute(mock(StepContribution.class), chunkContextWithNewIndex("articles_idx-123"));
+
         verify(batchClient, never()).deleteIndex(any());
     }
 

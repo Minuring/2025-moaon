@@ -1,34 +1,24 @@
 package moaon.backend.search.dictionary.service;
 
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
-import moaon.backend.search.ElasticsearchClientConfig;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import moaon.backend.search.dictionary.domain.NoriDictionaryEntry;
-import moaon.backend.search.dictionary.dto.ReloadResponse;
+import moaon.backend.search.dictionary.dto.BulkConflict;
 import moaon.backend.search.dictionary.dto.NoriEntry;
 import moaon.backend.search.dictionary.repository.NoriDictionaryRepository;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
-@Slf4j
+@RequiredArgsConstructor
 public class NoriDictionaryService {
 
-    private static final String ARTICLE_INDEX = "articles";
-
     private final NoriDictionaryRepository noriDictionaryRepository;
-    private final ElasticsearchClient elasticsearchClient;
-
-    public NoriDictionaryService(
-            NoriDictionaryRepository noriDictionaryRepository,
-            @Qualifier(ElasticsearchClientConfig.BULK_CLIENT) ElasticsearchClient elasticsearchClient
-    ) {
-        this.noriDictionaryRepository = noriDictionaryRepository;
-        this.elasticsearchClient = elasticsearchClient;
-    }
 
     public List<NoriEntry> findAll() {
         return noriDictionaryRepository.findAll().stream()
@@ -42,6 +32,22 @@ public class NoriDictionaryService {
         checkDuplicate(surface, null);
         NoriDictionaryEntry entry = noriDictionaryRepository.save(new NoriDictionaryEntry(surface, segments));
         return NoriEntry.from(entry);
+    }
+
+    /**
+     * dictionary.txt와 같은 형식(한 줄에 "표면어" 또는 "표면어 분해1 분해2")을 한 번에 추가한다.
+     * 기존 항목이나 같은 입력의 다른 줄과 겹치는 줄이 하나라도 있으면 아무것도 추가하지 않는다.
+     */
+    @Transactional
+    public List<NoriEntry> addAll(String text) {
+        List<NoriDictionaryEntry> entries = parseLines(text);
+        List<BulkConflict> conflicts = findConflicts(entries);
+        if (!conflicts.isEmpty()) {
+            throw new BulkConflictException(conflicts);
+        }
+        return noriDictionaryRepository.saveAll(entries).stream()
+                .map(NoriEntry::from)
+                .toList();
     }
 
     @Transactional
@@ -62,19 +68,37 @@ public class NoriDictionaryService {
         noriDictionaryRepository.deleteById(id);
     }
 
-    public ReloadResponse reloadIndex() {
-        try {
-            elasticsearchClient.indices().close(r -> r.index(ARTICLE_INDEX));
-            log.info("ES 인덱스 close: {}", ARTICLE_INDEX);
-
-            elasticsearchClient.indices().open(r -> r.index(ARTICLE_INDEX));
-            log.info("ES 인덱스 open: {}", ARTICLE_INDEX);
-
-            return new ReloadResponse(true, "Nori 사전 반영 완료 (인덱스 재시작됨)");
-        } catch (Exception e) {
-            log.error("Nori 인덱스 reload 실패", e);
-            return new ReloadResponse(false, "Nori 인덱스 reload 실패: " + e.getMessage());
+    private List<NoriDictionaryEntry> parseLines(String text) {
+        List<NoriDictionaryEntry> entries = text.lines()
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .map(line -> line.split("\\s+"))
+                .map(tokens -> new NoriDictionaryEntry(tokens[0], Arrays.asList(tokens).subList(1, tokens.length)))
+                .toList();
+        if (entries.isEmpty()) {
+            throw new IllegalArgumentException("추가할 항목이 없습니다.");
         }
+        return entries;
+    }
+
+    private List<BulkConflict> findConflicts(List<NoriDictionaryEntry> newEntries) {
+        Map<String, String> existingLines = new HashMap<>();
+        noriDictionaryRepository.findAll()
+                .forEach(e -> existingLines.put(normalize(e.getSurface()), e.toFileLine()));
+
+        Map<String, String> inputLines = new HashMap<>();
+        List<BulkConflict> conflicts = new ArrayList<>();
+        for (NoriDictionaryEntry entry : newEntries) {
+            String line = entry.toFileLine();
+            String key = normalize(entry.getSurface());
+            if (existingLines.containsKey(key)) {
+                conflicts.add(new BulkConflict(line, entry.getSurface(), existingLines.get(key)));
+            } else if (inputLines.containsKey(key)) {
+                conflicts.add(new BulkConflict(line, entry.getSurface(), inputLines.get(key)));
+            }
+            inputLines.putIfAbsent(key, line);
+        }
+        return conflicts;
     }
 
     private void checkDuplicate(String surface, Long excludeId) {

@@ -3,11 +3,17 @@ package moaon.backend.search.dictionary.service;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.indices.ReloadSearchAnalyzersResponse;
 import co.elastic.clients.elasticsearch.synonyms.SynonymRule;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import moaon.backend.search.ElasticsearchClientConfig;
 import moaon.backend.search.dictionary.domain.SynonymDictionaryEntry;
+import moaon.backend.search.dictionary.dto.BulkConflict;
 import moaon.backend.search.dictionary.dto.ReloadResponse;
 import moaon.backend.search.dictionary.dto.SynonymEntry;
 import moaon.backend.search.dictionary.repository.SynonymDictionaryRepository;
@@ -49,6 +55,22 @@ public class SynonymDictionaryService {
         checkDuplicate(terms, null);
         SynonymDictionaryEntry entry = synonymDictionaryRepository.save(new SynonymDictionaryEntry(terms));
         return SynonymEntry.from(entry);
+    }
+
+    /**
+     * 한 줄에 쉼표로 구분한 동의어 묶음 하나("아키텍처, 아키텍쳐, architecture")를 한 번에 추가한다.
+     * 기존 항목이나 같은 입력의 다른 줄과 term이 겹치는 줄이 하나라도 있으면 아무것도 추가하지 않는다.
+     */
+    @Transactional
+    public List<SynonymEntry> addAll(String text) {
+        List<SynonymDictionaryEntry> entries = parseLines(text);
+        List<BulkConflict> conflicts = findConflicts(entries);
+        if (!conflicts.isEmpty()) {
+            throw new BulkConflictException(conflicts);
+        }
+        return synonymDictionaryRepository.saveAll(entries).stream()
+                .map(SynonymEntry::from)
+                .toList();
     }
 
     @Transactional
@@ -94,6 +116,60 @@ public class SynonymDictionaryService {
             log.error("Synonym reload 실패", e);
             return new ReloadResponse(false, "synonym reload 실패: " + e.getMessage());
         }
+    }
+
+    private List<SynonymDictionaryEntry> parseLines(String text) {
+        List<SynonymDictionaryEntry> entries = text.lines()
+                .map(line -> Arrays.stream(line.split(","))
+                        .map(String::trim)
+                        .filter(term -> !term.isEmpty())
+                        .toList())
+                .filter(terms -> !terms.isEmpty())
+                .map(SynonymDictionaryEntry::new)
+                .toList();
+        if (entries.isEmpty()) {
+            throw new IllegalArgumentException("추가할 항목이 없습니다.");
+        }
+        return entries;
+    }
+
+    private List<BulkConflict> findConflicts(List<SynonymDictionaryEntry> newEntries) {
+        Map<String, String> existingRaws = new HashMap<>();
+        synonymDictionaryRepository.findAll()
+                .forEach(e -> e.terms().forEach(term -> existingRaws.put(normalize(term), e.getRawExpression())));
+
+        Map<String, String> inputRaws = new HashMap<>();
+        List<BulkConflict> conflicts = new ArrayList<>();
+        for (SynonymDictionaryEntry entry : newEntries) {
+            String raw = entry.getRawExpression();
+            entry.terms().stream()
+                    .map(term -> findConflict(raw, term, existingRaws, inputRaws))
+                    .flatMap(Optional::stream)
+                    .findFirst()
+                    .ifPresent(conflicts::add);
+            entry.terms().forEach(term -> inputRaws.putIfAbsent(normalize(term), raw));
+        }
+        return conflicts;
+    }
+
+    private Optional<BulkConflict> findConflict(
+            String raw,
+            String term,
+            Map<String, String> existingRaws,
+            Map<String, String> inputRaws
+    ) {
+        String key = normalize(term);
+        if (existingRaws.containsKey(key)) {
+            return Optional.of(new BulkConflict(raw, term, existingRaws.get(key)));
+        }
+        if (inputRaws.containsKey(key)) {
+            return Optional.of(new BulkConflict(raw, term, inputRaws.get(key)));
+        }
+        return Optional.empty();
+    }
+
+    private static String normalize(String term) {
+        return term.trim().toLowerCase();
     }
 
     private void checkDuplicate(List<String> newTerms, Long excludeId) {
