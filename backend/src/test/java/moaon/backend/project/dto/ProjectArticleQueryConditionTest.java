@@ -46,4 +46,17 @@ class ProjectArticleQueryConditionTest {
                 () -> assertThat(condition.search().value()).isEqualTo("버저닝")
         );
     }
+
+    @DisplayName("검색어 없이 생성하면 search는 null이다.")
+    @Test
+    void from_withoutSearch() {
+        // when
+        ProjectArticleQueryCondition condition = new ProjectArticleQueryCondition("be", null);
+
+        // then
+        assertAll(
+                () -> assertThat(condition.sector()).isEqualTo(Sector.BE),
+                () -> assertThat(condition.search()).isNull()
+        );
+    }
 }

@@ -28,7 +28,7 @@ public final class ProjectArticleQueryCondition {
     }
 
     public ProjectArticleQueryCondition(String sector, String search) {
-        this(sector == null ? null : Sector.of(sector), new SearchKeyword(search));
+        this(sector == null ? null : Sector.of(sector), search == null ? null : new SearchKeyword(search));
     }
 
     public ProjectArticleQueryCondition() {
